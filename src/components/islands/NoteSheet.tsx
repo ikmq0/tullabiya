@@ -3,12 +3,13 @@ import { t } from '~/i18n';
 import { getApi, type PageMark } from '~/lib/api';
 import type { Lang } from '~/lib/model';
 import { COMMENT_MAX } from '~/lib/notes';
-import { boundsOf, cropStyle, padRect } from '~/lib/pageLayout';
+import { boundsOf, cropStyle, PAGE_ASPECT, padRect } from '~/lib/pageLayout';
 
 /** A mark shown as a crop of the page itself: the PDFs' extracted text is damaged and never shown. */
 export function MarkCrop({ base, mark }: { base: string; mark: Pick<PageMark, 'page' | 'rects'> }) {
   const src = `${base}p${String(mark.page).padStart(2, '0')}.jpg`;
-  return <span class="mark-crop" aria-hidden="true" style={cropStyle(src, padRect(boundsOf(mark.rects), 0.01))} />;
+  const r = padRect(boundsOf(mark.rects), 0.01);
+  return <span class="mark-crop" aria-hidden="true" style={{ ...cropStyle(src, r), aspectRatio: `${r.w * PAGE_ASPECT} / ${r.h}` }} />;
 }
 
 interface Props {

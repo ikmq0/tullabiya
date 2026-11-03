@@ -247,7 +247,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
   }
 
   function track2(e: PointerEvent) {
-    const now = Date.now();
+    const now = e.timeStamp;
     if (now > last.t) {
       vx = (e.clientX - last.x) / (now - last.t);
       vy = (e.clientY - last.y) / (now - last.t);
@@ -266,7 +266,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
       edgeDir = view.z > 1 ? (Math.abs(view.x - edge) < 2 ? 1 : Math.abs(view.x + edge) < 2 ? -1 : 0) : 0;
       target = (e.target as Element) ?? stage;
       start = { x: e.clientX, y: e.clientY, t: Date.now(), base: trackX, view };
-      last = { x: e.clientX, y: e.clientY, t: start.t };
+      last = { x: e.clientX, y: e.clientY, t: e.timeStamp };
       vx = 0;
       vy = 0;
       if (marking) {
@@ -334,7 +334,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
           writeView(inside);
           mode = 'swipe';
           start = { ...start, x: e.clientX, base: 0 };
-          last = { x: e.clientX, y: e.clientY, t: Date.now() };
+          last = { x: e.clientX, y: e.clientY, t: e.timeStamp };
           vx = 0;
           hint(opts.content(), false);
           hint(track, true);
@@ -366,7 +366,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
         // One finger stays down: it pans from here.
         const [p] = [...pointers.values()];
         start = { x: p.x, y: p.y, t: Date.now(), base: 0, view };
-        last = { x: p.x, y: p.y, t: start.t };
+        last = { x: p.x, y: p.y, t: e.timeStamp };
         vx = 0;
         vy = 0;
         mode = 'pan';
@@ -381,7 +381,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
       return;
     }
     if (mode === 'pan') {
-      if (Date.now() - last.t > 80) {
+      if (e.timeStamp - last.t > 80) {
         vx = 0;
         vy = 0;
       }
@@ -391,13 +391,13 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
     if (mode === 'swipe') {
       mode = 'idle';
       // A finger that stopped before lifting has no speed left.
-      if (Date.now() - last.t > 80) vx = 0;
+      if (e.timeStamp - last.t > 80) vx = 0;
       endSwipe();
       return;
     }
     if (mode === 'dismiss') {
       mode = 'idle';
-      if (Date.now() - last.t > 80) vy = 0;
+      if (e.timeStamp - last.t > 80) vy = 0;
       if (trackY > stage.clientHeight * 0.18 || vy > 0.5) cb.onDismiss?.();
       else {
         cb.onDismissDrag?.(0);
