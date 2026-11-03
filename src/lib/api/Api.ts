@@ -33,6 +33,8 @@ export interface HuntSolved {
   at: string;
 }
 
+import type { Stamp } from '~/lib/stamps';
+
 export interface VisitDelta {
   first: boolean;
   sinceAt: string | null;
@@ -100,6 +102,8 @@ export interface Api {
   upvoteQuestion(id: string): Promise<{ count: number; mine: boolean }>;
   /** Records a visit and says what changed since the previous one. */
   visit(issue: number, lang: string): Promise<VisitDelta>;
+  /** Stamps earned so far, oldest first. */
+  getStamps(): Promise<Stamp[]>;
   getRegistrations(): Promise<string[]>;
   toggleRegistration(eventId: string): Promise<string[]>;
   getReminders(): Promise<string[]>;

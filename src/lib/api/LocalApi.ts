@@ -9,6 +9,8 @@ import { COMMUNITY, HUNTS, POLLS } from '~/data/interactive';
 import { breakdownVisible, tally } from '~/lib/poll';
 import { emptyProgress } from '~/lib/progress';
 import { cluesOpenOn, makeCode, matchesAnswer } from '~/lib/hunt';
+import { dueStamps, type Stamp } from '~/lib/stamps';
+import { issueState } from '~/lib/progress';
 import { sanitizeText } from '~/lib/sanitize';
 
 interface HuntUserState {
@@ -33,6 +35,7 @@ interface State {
   saved: string[];
   /** Snapshot taken at the last visit, by wall-clock time, for "since your last visit". */
   lastVisit?: { at: number; pollTotals: Record<string, number>; clues: Record<string, number>; langs: string[]; delta: VisitDelta };
+  stamps?: Stamp[];
 }
 
 export interface LocalApiDeps {
@@ -98,7 +101,24 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
     writeJson(storage, KEYS.state, f);
     return f;
   }
+  /** Awards whatever the state now earns; stamps are never taken back. */
+  function settle(s: State): Stamp[] {
+    const have = s.stamps ?? [];
+    const got = new Set(have.map((x) => x.id));
+    const due = dueStamps({
+      voted: Object.keys(s.votes).length > 0,
+      solved: Object.values(s.hunts).some((h) => !!h.solved),
+      follows: s.favorites.units.length,
+      langs: s.lastVisit?.langs.length ?? 0,
+      digestDone: Object.values(s.progress).some((p) => !!p.digestDone),
+      completeIssues: Object.values(s.progress).filter((p) => issueState(p) === 'complete').map((p) => p.issue),
+    });
+    const at = new Date(wall()).toISOString();
+    s.stamps = [...have, ...due.filter((id) => !got.has(id)).map((id) => ({ id, at }))];
+    return s.stamps;
+  }
   function save(s: State): void {
+    settle(s);
     writeJson(storage, KEYS.state, s);
   }
   function pollDef(id: string): Poll {
@@ -350,6 +370,9 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
       }
       save(s);
       return delta;
+    },
+    async getStamps() {
+      return settle(load());
     },
     async getRegistrations() {
       return [...load().registrations];

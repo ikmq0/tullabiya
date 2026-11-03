@@ -3,7 +3,9 @@ import { useStore } from '@nanostores/preact';
 import { t, L } from '~/i18n';
 import { accent, EMPTY_FAVORITES, SECTIONS, type Lang, type Localized } from '~/lib/model';
 import { getApi } from '~/lib/api';
-import { $favorites, $profile, $sheet, hydrate, resetAll, saveFavorites, togglePinnedSection } from '~/lib/store';
+import { $favorites, $profile, $sheet, $stamps, hydrate, resetAll, saveFavorites, togglePinnedSection } from '~/lib/store';
+import { STAMP_IDS } from '~/lib/stamps';
+import { StampMark } from './StampToast';
 import { Avatar } from './ProfileChip';
 import { Star } from './Onboarding';
 import ArchiveWall from './ArchiveWall';
@@ -25,6 +27,8 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
   const mounted = useMounted();
   const profile = mounted ? profileStore : null;
   const favs = mounted ? favsStore : EMPTY_FAVORITES;
+  const stampsStore = useStore($stamps);
+  const stamps = mounted ? stampsStore : [];
   const [saved, setSaved] = useState<string[]>([]);
   const [resetDone, setResetDone] = useState(false);
   useEffect(() => {
@@ -77,6 +81,25 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
             );
           })}
         </div>
+      </section>
+
+      <section class="my-block" aria-labelledby="my-stamps-title" id="my-stamps">
+        <h2 id="my-stamps-title">{t(lang, 'my.stamps')}</h2>
+        <p class="pop-sub">{t(lang, 'my.stampsLead', { k: stamps.length, n: STAMP_IDS.length })}</p>
+        <ul class="stamp-grid">
+          {STAMP_IDS.map((id) => {
+            const on = stamps.some((s) => s.id === id);
+            return (
+              <li key={id} class="stamp" data-id={id} data-on={on ? 'true' : 'false'}>
+                <StampMark on={on} size={44} />
+                <div>
+                  <b>{t(lang, `stamp.${id}.name`)}</b>
+                  <small>{t(lang, `stamp.${id}.hint`)}</small>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       <section class="my-block" aria-labelledby="my-units">

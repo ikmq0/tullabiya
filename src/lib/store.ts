@@ -1,6 +1,7 @@
 // Shared reader state for the islands: profile, pins, progress. Hydrated once from the Api.
 import { atom } from 'nanostores';
 import { getApi, type IssueProgress, type VisitDelta } from '~/lib/api';
+import type { Stamp, StampId } from '~/lib/stamps';
 import { accent, EMPTY_FAVORITES, KEYS, type Favorites, type Profile, type SectionId } from '~/lib/model';
 import { readJson, safeStorage, writeJson } from '~/lib/api/storage';
 
@@ -10,6 +11,17 @@ export const $progress = atom<IssueProgress | null>(null);
 export const $ready = atom(false);
 /** What changed since the reader's previous visit; null until known. */
 export const $visit = atom<VisitDelta | null>(null);
+/** Stamps earned so far, and the one to announce right now. */
+export const $stamps = atom<Stamp[]>([]);
+export const $toast = atom<StampId | null>(null);
+
+/** Re-reads the stamps; a new one (after the first load) is announced. */
+export async function refreshStamps(announce = true): Promise<void> {
+  const next = await getApi().getStamps();
+  const before = $stamps.get();
+  if (announce && $ready.get() && next.length > before.length) $toast.set(next[next.length - 1].id);
+  $stamps.set(next);
+}
 /** Which sheet is open, shared across islands. */
 export const $sheet = atom<'onboarding' | null>(null);
 /** "My favorites only": lists narrow to followed publishers and pinned sections. Persisted. */
@@ -67,8 +79,12 @@ export function hydrate(issue: number): Promise<void> {
     $favorites.set(f);
     $progress.set(pr);
     $forYou.set(readJson(safeStorage(), FORYOU, false));
+    $stamps.set(await api.getStamps());
     $ready.set(true);
-    if (typeof document !== 'undefined') $visit.set(await api.visit(issue, document.documentElement.lang || 'ar'));
+    if (typeof document !== 'undefined') {
+      $visit.set(await api.visit(issue, document.documentElement.lang || 'ar'));
+      await refreshStamps();
+    }
   })();
   return hydrating;
 }
@@ -86,6 +102,7 @@ export async function clearProfile(): Promise<void> {
 export async function saveFavorites(f: Favorites): Promise<void> {
   await getApi().saveFavorites(f);
   $favorites.set(await getApi().getFavorites());
+  await refreshStamps();
 }
 
 export async function togglePinnedSection(id: SectionId): Promise<void> {
@@ -96,6 +113,7 @@ export async function togglePinnedSection(id: SectionId): Promise<void> {
 
 export async function markProgress(issue: number, patch: Partial<IssueProgress>): Promise<void> {
   $progress.set(await getApi().markProgress(issue, patch));
+  await refreshStamps();
   if (patch.sectionsRead?.length) maybeNudge();
 }
 
@@ -105,4 +123,5 @@ export async function resetAll(): Promise<void> {
   $profile.set(null);
   $favorites.set(EMPTY_FAVORITES);
   $progress.set(null);
+  $stamps.set([]);
 }

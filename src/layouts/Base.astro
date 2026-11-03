@@ -1,4 +1,5 @@
 ---
+import StampToast from '~/components/islands/StampToast';
 import '~/styles/tokens.css';
 import '~/styles/fonts.css';
 import '~/styles/base.css';
@@ -53,5 +54,6 @@ const otherPath = path.replace(/^\/(ar|en)(?=\/|$)/, `/${other}`);
   <body>
     <a class="skip" href="#main">{lang === 'ar' ? 'تخطَّ إلى المحتوى' : 'Skip to content'}</a>
     <slot />
+    <StampToast client:idle lang={lang} />
   </body>
 </html>

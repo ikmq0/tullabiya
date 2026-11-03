@@ -245,3 +245,15 @@ describe('visits', () => {
     expect(again.votesSince).toBe(14);
   });
 });
+
+describe('stamps', () => {
+  it('the first vote earns first-vote, kept across instances; nothing twice', async () => {
+    const storage = memoryStorage();
+    expect(await make(storage).getStamps()).toEqual([]);
+    await make(storage).vote('p-small', 'a');
+    const got = await make(storage).getStamps();
+    expect(got.map((s) => s.id)).toEqual(['first-vote']);
+    await make(storage).vote('p-small', 'a');
+    expect((await make(storage).getStamps()).length).toBe(1);
+  });
+});
