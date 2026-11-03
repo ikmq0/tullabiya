@@ -1,5 +1,8 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
+import { useStore } from '@nanostores/preact';
 import { L, t } from '~/i18n';
+import { $favorites, ensureFavorites, saveFavorites } from '~/lib/store';
+import Star from './Star';
 import type { Lang } from '~/lib/model';
 import { resolveHref, type EntityAction, type EntityKind } from '~/lib/entities';
 import type { IcsEvent } from '~/lib/ics';
@@ -48,6 +51,12 @@ function download(ev: IcsEvent, lang: Lang) {
 export default function EntityChip({ lang, kind, id, name, sub, actions, event, variant = 'inline' }: Props) {
   const pop = usePopover();
   const [toggles, setToggles] = useState<Record<string, boolean>>({});
+  const favs = useStore($favorites);
+  const following = kind === 'unit' && favs.units.includes(id);
+  useEffect(() => {
+    if (kind === 'unit') void ensureFavorites();
+  }, [kind]);
+  const follow = () => saveFavorites({ ...favs, units: following ? favs.units.filter((u) => u !== id) : [...favs.units, id] });
   const titleId = `chip-${kind}-${id}`;
   const flip = (k: string) => setToggles((s) => ({ ...s, [k]: !s[k] }));
 
@@ -69,6 +78,14 @@ export default function EntityChip({ lang, kind, id, name, sub, actions, event, 
           {sub && <p class="pop-sub">{sub}</p>}
         </div>
         <ul class="menu">
+          {kind === 'unit' && (
+            <li>
+              <button type="button" class="menu-item follow" aria-pressed={following} onClick={follow}>
+                <Star on={following} />
+                {following ? t(lang, 'foryou.following') : t(lang, 'foryou.follow')}
+              </button>
+            </li>
+          )}
           {actions.map((a) => {
             const label = L(a.label, lang);
             if (a.id === 'calendar' && event) {

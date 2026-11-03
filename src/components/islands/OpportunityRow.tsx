@@ -12,6 +12,7 @@ interface Props {
   lang: Lang;
   event: IcsEvent;
   eventId: string;
+  unitId: string;
   day: number;
   weekday: string;
   title: string;
@@ -23,7 +24,7 @@ interface Props {
 }
 
 /** One opportunity: register (state toggle), add to calendar, ask the organizer. */
-export default function OpportunityRow({ lang, event, eventId, day, weekday, title, organizer, askHref, daysLeft: initialDays, startIso }: Props) {
+export default function OpportunityRow({ lang, event, eventId, unitId, day, weekday, title, organizer, askHref, daysLeft: initialDays, startIso }: Props) {
   const [reg, setReg] = useState<boolean | null>(null);
   const [daysLeft, setDaysLeft] = useState(initialDays);
   useEffect(() => {
@@ -43,12 +44,13 @@ export default function OpportunityRow({ lang, event, eventId, day, weekday, tit
   const left = ended ? t(lang, 'opp.past') : tp(lang, 'opp.daysLeft', daysLeft);
 
   return (
-    <article class="row">
+    <article class="row" data-fy data-units={unitId}>
       <div class="d">
         {day}
         <small>{weekday}</small>
       </div>
       <div>
+        <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
         <h3>{latin(title)}</h3>
         <p>{organizer}</p>
         <p class="left">{left}</p>

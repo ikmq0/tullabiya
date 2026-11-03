@@ -1747,3 +1747,95 @@
     font-size: 1.875rem;
   }
 }
+
+/* ---------- for you: marks, dimming, the band's list ---------- */
+.fy-mark {
+  display: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  padding: 0 10px;
+  margin-block-end: 6px;
+  background: var(--me);
+  color: var(--me-ink, var(--ink));
+  clip-path: polygon(0.3em 0, 100% 0, calc(100% - 0.3em) 100%, 0 100%);
+}
+[data-fy='1'] > .fy-mark,
+[data-fy='1'] > div > .fy-mark {
+  display: inline-block;
+}
+html[data-foryou] [data-fy='0']:not([data-nodim]) {
+  opacity: 0.38;
+}
+[data-fy] {
+  transition: opacity 200ms ease;
+}
+html[data-foryou] [data-fy-hide] [data-fy='0'] {
+  display: none;
+}
+.favs-items {
+  margin-block-start: 28px;
+  padding-block-start: 22px;
+  border-block-start: 3px solid var(--bg);
+}
+.favs-items-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-block-end: 10px;
+}
+.favs-items-head h3 {
+  font-size: var(--text-lg);
+}
+.favs-empty {
+  color: var(--fg2);
+  font-size: var(--text-md);
+}
+.fav-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+.fav-list a {
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
+  background: var(--bg);
+  text-decoration: none;
+  border-inline-start: 6px solid var(--me, var(--turq));
+  transition: transform var(--t-press) var(--ease-out), background-color 150ms ease;
+}
+.fav-list a:active {
+  transform: scale(0.98);
+}
+.fav-kind {
+  font-size: var(--text-sm);
+  color: var(--fg2);
+}
+.fav-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  line-height: 1.3;
+}
+.fav-meta {
+  font-size: var(--text-sm);
+  color: var(--fg2);
+}
+.menu-item.follow .star {
+  flex: none;
+}
+.chip.foryou[disabled] {
+  opacity: 0.55;
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .fav-list a:hover {
+    background: color-mix(in oklab, var(--bg) 85%, var(--me, var(--turq)));
+  }
+}

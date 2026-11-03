@@ -1,5 +1,6 @@
 ---
 import OpportunityRow from '~/components/islands/OpportunityRow';
+import ForYouFilter from '~/components/islands/ForYouFilter';
 import { L, t, weekdayName } from '~/i18n';
 import { unitById } from '~/data';
 import { toIcsEvent } from '~/lib/ics';
@@ -13,8 +14,10 @@ interface Props {
   today: string;
   headingId?: string;
   limit?: number;
+  /** The list page carries its own "my favorites only" chip; the home band drives the home. */
+  filter?: boolean;
 }
-const { lang, events, today, headingId = 'opp-title', limit } = Astro.props;
+const { lang, events, today, headingId = 'opp-title', limit, filter = false } = Astro.props;
 const dayMs = 86_400_000;
 const t0 = new Date(`${today}T12:00:00+03:00`).getTime();
 const rows = events
@@ -28,8 +31,10 @@ const rows = events
     <div class="opp-head">
       <h2 id={headingId}>{t(lang, 'opp.title')}</h2>
       <p>{t(lang, 'opp.lead')}</p>
+      {filter && <ForYouFilter client:idle lang={lang} />}
     </div>
-    <div class="rows">
+    <div class="rows" data-fy-list data-fy-hide={filter || undefined}>
+      <p class="favs-empty" data-fy-empty hidden>{t(lang, 'foryou.emptyList')}</p>
       {rows.map(({ e, daysLeft }) => {
         const u = unitById(e.unitId);
         return (
@@ -38,6 +43,7 @@ const rows = events
             lang={lang}
             event={toIcsEvent(e)}
             eventId={e.id}
+            unitId={e.unitId}
             day={Number(e.start.slice(8, 10))}
             weekday={weekdayName(lang, e.start)}
             title={L(e.title, lang)}

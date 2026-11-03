@@ -29,7 +29,8 @@ const bigAuthor = author(big);
   <div class="wrap">
     <h2 id="voices-title">{t(lang, 'voices.title')}</h2>
     <div class="voices-grid">
-      <article class="vo big">
+      <article class="vo big" data-fy data-nodim data-units={big.unitIds.join(',')} data-section={big.section}>
+        <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
         {hasPhoto(big.photo) && <Image class="fast-photo" src={photo(big.photo)} alt={L(big.photoAlt ?? big.title, lang)} widths={[640, 1000]} sizes="(max-width: 1023px) 100vw, 50vw" loading="lazy" />}
         <h3><a href={href(big)}>{L(big.title, lang)}</a></h3>
         {bigAuthor && (
@@ -51,7 +52,8 @@ const bigAuthor = author(big);
         {side.map((s) => {
           const a = author(s);
           return (
-            <article class="vo">
+            <article class="vo" data-fy data-units={s.unitIds.join(',')} data-section={s.section}>
+              <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
               <h3><a href={href(s)}>{L(s.title, lang)}</a></h3>
               {a && (
                 <div class="by">

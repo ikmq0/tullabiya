@@ -26,7 +26,8 @@ const leadPhotos = (lead.photos ?? [lead.photo]).filter(hasPhoto).slice(0, 3);
   <div class="wrap">
     <h2 id="news-title">{t(lang, 'news.title')}</h2>
     <div class="news-grid">
-      <article class="lead-story">
+      <article class="lead-story" data-fy data-nodim data-units={lead.unitIds.join(',')} data-section={lead.section}>
+        <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
         <div class="mosaic">
           {leadPhotos.map((p, i) => (
             <Image src={photo(p)} alt={i === 0 ? L(lead.photoAlt ?? lead.title, lang) : `${L(lead.title, lang)} (${i + 1})`} widths={[480, 800]} sizes="(max-width: 1023px) 100vw, 40vw" loading={i === 0 ? 'eager' : 'lazy'} />
@@ -54,7 +55,8 @@ const leadPhotos = (lead.photos ?? [lead.photo]).filter(hasPhoto).slice(0, 3);
         {side.map((s) => {
           const u = unitChip(s.unitIds[0], L(s.title, lang));
           return (
-            <article class="side-story">
+            <article class="side-story" data-fy data-units={s.unitIds.join(',')} data-section={s.section}>
+              <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
               {hasPhoto(s.photo) && <Image src={photo(s.photo)} alt={L(s.photoAlt ?? s.title, lang)} widths={[480, 800]} sizes="(max-width: 1023px) 100vw, 30vw" loading="lazy" />}
               <h3><a href={href(s)}>{L(s.title, lang)}</a></h3>
               <p>{L(s.summary, lang)}</p>

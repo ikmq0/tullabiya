@@ -20,7 +20,7 @@ const TODAY = DEMO_TODAY ?? new Date().toISOString().slice(0, 10);
   <TopBar lang={lang} issue={issue.number} current="opportunities" />
   <main id="main">
     <h1 class="sr">{t(lang, 'opp.title')}</h1>
-    <OpportunitiesBlock lang={lang} events={events} today={TODAY} headingId="opp-page-title" />
+    <OpportunitiesBlock lang={lang} events={events} today={TODAY} headingId="opp-page-title" filter />
   </main>
   <Footer lang={lang} />
 </Base>

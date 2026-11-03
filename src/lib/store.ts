@@ -20,10 +20,23 @@ export function setForYou(on: boolean): void {
   writeJson(safeStorage(), FORYOU, on);
 }
 
-/** Your color reaches CSS as --me: the bars, the marker, the stamps. */
+/** Your color reaches CSS as --me (and the text that passes on it as --me-ink). */
 function applyAccent(p: Profile | null): void {
   if (typeof document === 'undefined') return;
-  document.documentElement.style.setProperty('--me', p ? accent(p.color).color : '');
+  const st = document.documentElement.style;
+  st.setProperty('--me', p ? accent(p.color).color : '');
+  st.setProperty('--me-ink', p ? (accent(p.color).ink === 'ink' ? 'var(--ink)' : 'var(--beige)') : '');
+}
+
+/** Islands that only need the follows (chips in stories) seed them without a full hydrate. */
+export async function ensureFavorites(): Promise<void> {
+  if ($ready.get()) return;
+  const [p, f] = await Promise.all([getApi().getProfile(), getApi().getFavorites()]);
+  if (!$ready.get()) {
+    $profile.set(p);
+    $favorites.set(f);
+    $forYou.set(readJson(safeStorage(), FORYOU, false));
+  }
 }
 if (typeof document !== 'undefined') $profile.subscribe(applyAccent);
 
