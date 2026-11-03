@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
 import { L, t, tp, formatDate, weekdayName } from '~/i18n';
-import { college, type EventItem, type Lang } from '~/lib/model';
+import { accent, EMPTY_FAVORITES, type EventItem, type Lang } from '~/lib/model';
 import { buildStrip } from '~/lib/strip';
 import { toIcsEvent } from '~/lib/ics';
 import { initial } from '~/lib/name';
 import { getApi } from '~/lib/api';
-import { $profile, hydrate } from '~/lib/store';
+import { $favorites, $profile, hydrate } from '~/lib/store';
 import AddToCalendar from './AddToCalendar';
 import { latin } from '~/lib/latin';
 import { useMounted } from '~/lib/useMounted';
@@ -29,8 +29,10 @@ export default function MonthStrip({ lang, issue, year, month, monthLabel, today
   const profileStore = useStore($profile);
   const mounted = useMounted();
   const profile = mounted ? profileStore : null;
+  const favsStore = useStore($favorites);
+  const favs = mounted ? favsStore : EMPTY_FAVORITES;
   const [today, setToday] = useState(todayProp);
-  const days = useMemo(() => buildStrip(events, year, month, profile), [events, year, month, profile]);
+  const days = useMemo(() => buildStrip(events, year, month, favs), [events, year, month, favs]);
   const firstEventDay = days.find((d) => d.events.length)?.day ?? 1;
   const todayDay = today.startsWith(`${year}-${String(month).padStart(2, '0')}-`) ? Number(today.slice(8, 10)) : 0;
   const defaultSel = todayDay && days[todayDay - 1]?.events.length ? todayDay : (days.find((d) => d.day >= todayDay && d.events.length)?.day ?? firstEventDay);
@@ -86,15 +88,15 @@ export default function MonthStrip({ lang, issue, year, month, monthLabel, today
 
   const day = days[sel - 1];
   const ev = day?.events[evIdx] ?? day?.events[0];
-  const myCollege = profile ? college(profile.college) : null;
+  const following = favs.units.length > 0;
 
   return (
     <>
       <div class="legend">
-        {myCollege && (
+        {following && (
           <span>
-            <i style={{ background: myCollege.color }} />
-            {t(lang, 'month.legend.mine', { college: L(myCollege.name, lang) })}
+            <i style={{ background: 'var(--me)' }} />
+            {t(lang, 'month.legend.mine')}
           </span>
         )}
         <span>
@@ -123,7 +125,7 @@ export default function MonthStrip({ lang, issue, year, month, monthLabel, today
                 onClick={() => select(d.day)}
               >
                 {isToday && (
-                  <span class="av you" aria-hidden="true" style={myCollege ? { background: myCollege.color, color: myCollege.ink === 'ink' ? 'var(--ink)' : 'var(--beige)' } : undefined}>
+                  <span class="av you" aria-hidden="true" style={profile ? { background: accent(profile.color).color, color: accent(profile.color).ink === 'ink' ? 'var(--ink)' : 'var(--beige)' } : undefined}>
                     {profile ? initial(profile.name) : <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8.5 3h7l5 5v7l-5 5h-7l-5-5V8z" fill="currentColor" /></svg>}
                   </span>
                 )}

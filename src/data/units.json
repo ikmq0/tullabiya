@@ -1,43 +1,142 @@
 [
   {
     "id": "dsa",
-    "name": { "ar": "عمادة شؤون الطلاب", "en": "Deanship of Student Affairs", "enStatus": "reviewed" },
-    "short": { "ar": "شؤون الطلاب", "en": "Student Affairs", "enStatus": "reviewed" },
+    "name": {
+      "ar": "عمادة شؤون الطلاب",
+      "en": "Deanship of Student Affairs",
+      "enStatus": "reviewed"
+    },
+    "short": {
+      "ar": "شؤون الطلاب",
+      "en": "Student Affairs",
+      "enStatus": "reviewed"
+    },
     "email": "dsa-mag@kfupm.edu.sa",
-    "office": { "ar": "مبنى 54", "en": "Building 54", "enStatus": "machine" }
+    "office": {
+      "ar": "مبنى 54",
+      "en": "Building 54",
+      "enStatus": "machine"
+    }
   },
   {
     "id": "mag",
-    "name": { "ar": "هيئة تحرير الطلّابية", "en": "Al-Tullabiya editorial board", "enStatus": "machine" },
-    "short": { "ar": "هيئة التحرير", "en": "Editorial board", "enStatus": "machine" },
+    "name": {
+      "ar": "هيئة تحرير الطلّابية",
+      "en": "Al-Tullabiya editorial board",
+      "enStatus": "machine"
+    },
+    "short": {
+      "ar": "هيئة التحرير",
+      "en": "Editorial board",
+      "enStatus": "machine"
+    },
     "email": "dsa-mag@kfupm.edu.sa"
   },
   {
     "id": "srt",
-    "name": { "ar": "إدارة توظيف وتدريب الطلاب", "en": "Student Recruitment & Training", "enStatus": "machine" },
-    "short": { "ar": "توظيف وتدريب الطلاب", "en": "Recruitment & Training", "enStatus": "machine" },
+    "name": {
+      "ar": "إدارة توظيف وتدريب الطلاب",
+      "en": "Student Recruitment & Training",
+      "enStatus": "machine"
+    },
+    "short": {
+      "ar": "توظيف وتدريب الطلاب",
+      "en": "Recruitment & Training",
+      "enStatus": "machine"
+    },
     "email": "dsa-mag@kfupm.edu.sa"
   },
   {
     "id": "murshid",
-    "name": { "ar": "برنامج الإرشاد", "en": "The Murshid mentoring program", "enStatus": "machine" },
-    "short": { "ar": "الإرشاد", "en": "Murshid", "enStatus": "machine" },
+    "name": {
+      "ar": "برنامج الإرشاد",
+      "en": "The Murshid mentoring program",
+      "enStatus": "machine"
+    },
+    "short": {
+      "ar": "الإرشاد",
+      "en": "Murshid",
+      "enStatus": "machine"
+    },
     "email": "dsa-mag@kfupm.edu.sa"
   },
   {
     "id": "council",
-    "name": { "ar": "المجلس الاستشاري الطلابي", "en": "Student Advisory Council", "enStatus": "machine" },
-    "short": { "ar": "المجلس الاستشاري", "en": "Advisory Council", "enStatus": "machine" },
+    "name": {
+      "ar": "المجلس الاستشاري الطلابي",
+      "en": "Student Advisory Council",
+      "enStatus": "machine"
+    },
+    "short": {
+      "ar": "المجلس الاستشاري",
+      "en": "Advisory Council",
+      "enStatus": "machine"
+    },
     "email": "dsa-mag@kfupm.edu.sa"
   },
   {
     "id": "housing",
-    "name": { "ar": "السكن الجامعي", "en": "Student Housing", "enStatus": "machine" },
-    "short": { "ar": "السكن", "en": "Housing", "enStatus": "machine" }
+    "name": {
+      "ar": "السكن الجامعي",
+      "en": "Student Housing",
+      "enStatus": "machine"
+    },
+    "short": {
+      "ar": "السكن",
+      "en": "Housing",
+      "enStatus": "machine"
+    }
   },
   {
     "id": "fawzan",
-    "name": { "ar": "أكاديمية الفوزان للعمل التطوعي", "en": "Al-Fozan Academy for Volunteering", "enStatus": "machine" },
-    "short": { "ar": "أكاديمية الفوزان", "en": "Al-Fozan Academy", "enStatus": "machine" }
+    "name": {
+      "ar": "أكاديمية الفوزان للعمل التطوعي",
+      "en": "Al-Fozan Academy for Volunteering",
+      "enStatus": "machine"
+    },
+    "short": {
+      "ar": "أكاديمية الفوزان",
+      "en": "Al-Fozan Academy",
+      "enStatus": "machine"
+    }
+  },
+  {
+    "id": "sac",
+    "name": {
+      "ar": "مركز الأنشطة الطلابية (SAC)",
+      "en": "Student Activities Center (SAC)",
+      "enStatus": "reviewed"
+    },
+    "short": {
+      "ar": "الأنشطة الطلابية",
+      "en": "Student Activities",
+      "enStatus": "reviewed"
+    }
+  },
+  {
+    "id": "counsel",
+    "name": {
+      "ar": "مركز الإرشاد الطلابي",
+      "en": "Student Counseling Center",
+      "enStatus": "reviewed"
+    },
+    "short": {
+      "ar": "الإرشاد",
+      "en": "Counseling",
+      "enStatus": "reviewed"
+    }
+  },
+  {
+    "id": "sports",
+    "name": {
+      "ar": "الأنشطة الرياضية",
+      "en": "Sports Activities",
+      "enStatus": "reviewed"
+    },
+    "short": {
+      "ar": "الرياضة",
+      "en": "Sports",
+      "enStatus": "reviewed"
+    }
   }
 ]

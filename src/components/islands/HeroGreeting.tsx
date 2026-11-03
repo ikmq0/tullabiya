@@ -1,9 +1,9 @@
 import { useEffect } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
-import { t, tp, L } from '~/i18n';
-import { college, type CollegeId, type Lang } from '~/lib/model';
+import { t, tp } from '~/i18n';
+import type { Lang } from '~/lib/model';
 import { displayName, dirFor } from '~/lib/name';
-import { $profile, $sheet, hydrate } from '~/lib/store';
+import { $favorites, $profile, $sheet, hydrate } from '~/lib/store';
 import { useMounted } from '~/lib/useMounted';
 
 interface Props {
@@ -11,13 +11,14 @@ interface Props {
   issue: number;
   month: string;
   totalEvents: number;
-  /** Events per college id, computed at build time. */
-  perCollege: Partial<Record<CollegeId, number>>;
+  /** The organizer of each event this month, so the greeting can count the ones you follow. */
+  eventUnits: string[];
 }
 
 /** The page's one h1. Server-rendered anonymous; personalized after hydration, with no motion. */
-export default function HeroGreeting({ lang, issue, month, totalEvents, perCollege }: Props) {
+export default function HeroGreeting({ lang, issue, month, totalEvents, eventUnits }: Props) {
   const profileStore = useStore($profile);
+  const favs = useStore($favorites);
   const mounted = useMounted();
   const profile = mounted ? profileStore : null;
   useEffect(() => void hydrate(issue), [issue]);
@@ -36,7 +37,7 @@ export default function HeroGreeting({ lang, issue, month, totalEvents, perColle
     );
   }
   const name = displayName(profile.name);
-  const n = perCollege[profile.college] ?? 0;
+  const n = eventUnits.filter((u) => favs.units.includes(u)).length;
   const greeting = t(lang, 'hero.greeting', { name: '\u0000' }).split('\u0000');
   const long = Array.from(name).length > 9;
   return (
@@ -47,7 +48,7 @@ export default function HeroGreeting({ lang, issue, month, totalEvents, perColle
         {greeting[1]}
       </h1>
       <p class="hero-sub">
-        {t(lang, 'hero.sub', { issue, month, events: tp(lang, 'events.count', n), college: L(college(profile.college).name, lang) })}
+        {n > 0 ? t(lang, 'hero.sub', { issue, month, events: tp(lang, 'events.count', n) }) : t(lang, 'hero.subAnon', { issue, month, events: tp(lang, 'events.count', totalEvents) })}
       </p>
     </>
   );

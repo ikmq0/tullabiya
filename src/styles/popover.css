@@ -10,6 +10,7 @@
   inset-block-start: calc(100% + 8px);
   inset-inline-start: 0;
   z-index: 40;
+  inline-size: max-content;
   min-inline-size: 240px;
   max-inline-size: min(380px, calc(100vw - 32px));
   background: var(--bg);
@@ -26,12 +27,12 @@
 [dir='rtl'] .popover {
   transform-origin: top right;
 }
-.popover.end {
+.popover.pop-end {
   inset-inline-start: auto;
   inset-inline-end: 0;
   transform-origin: top right;
 }
-[dir='rtl'] .popover.end {
+[dir='rtl'] .popover.pop-end {
   transform-origin: top left;
 }
 .popover.up {

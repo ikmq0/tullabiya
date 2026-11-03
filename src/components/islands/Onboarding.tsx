@@ -1,42 +1,46 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
 import { t, L } from '~/i18n';
-import { COLLEGES, SECTIONS, type Address, type CollegeId, type Lang, type SectionId } from '~/lib/model';
+import { ACCENTS, accent, SECTIONS, type AccentId, type Address, type Lang, type Localized, type SectionId } from '~/lib/model';
 import { resizeAvatar, initial } from '~/lib/name';
-import { $favorites, $profile, $ready, $sheet, dismissOnboarding, hydrate, onboardingDismissed, saveFavorites, saveProfile } from '~/lib/store';
+import { $favorites, $profile, $sheet, dismissOnboarding, hydrate, saveFavorites, saveProfile } from '~/lib/store';
+import Star from './Star';
+
+export { Star };
 
 interface Props {
   lang: Lang;
   issue: number;
+  /** Publishers the reader can follow, in the order the page lists them. */
+  units: { id: string; name: Localized }[];
 }
 
-/** A bottom sheet, seen once (or when the reader edits their profile): 420ms drawer curve in, faster out. */
-export default function Onboarding({ lang, issue }: Props) {
+/** A bottom sheet, opened on purpose (or once by the nudge after the first read): name, photo, your
+ *  color, publishers to follow, sections to pin, how to be addressed. 420ms drawer curve in, faster out. */
+export default function Onboarding({ lang, issue, units }: Props) {
   const sheet = useStore($sheet);
   const profile = useStore($profile);
   const favs = useStore($favorites);
-  const ready = useStore($ready);
   const open = sheet === 'onboarding';
   const [name, setName] = useState('');
-  const [col, setCol] = useState<CollegeId>('eng');
+  const [color, setColor] = useState<AccentId>('orange');
   const [addr, setAddr] = useState<Address>('neutral');
   const [pins, setPins] = useState<SectionId[]>([]);
+  const [follows, setFollows] = useState<string[]>([]);
   const [avatar, setAvatar] = useState<string | undefined>();
   const [err, setErr] = useState<string | null>(null);
   const panel = useRef<HTMLDivElement>(null);
   const firstField = useRef<HTMLInputElement>(null);
 
   useEffect(() => void hydrate(issue), [issue]);
-  // Never auto-opens: the hero invites the reader; the sheet is only ever opened on purpose.
-  void ready;
-  void onboardingDismissed;
 
   useEffect(() => {
     if (!open) return;
     setName(profile?.name ?? '');
-    setCol(profile?.college ?? 'eng');
+    setColor(profile?.color ?? 'orange');
     setAddr(profile?.address ?? 'neutral');
     setPins(favs.sections);
+    setFollows(favs.units);
     setAvatar(profile?.avatar);
     setErr(null);
     const prev = document.body.style.overflow;
@@ -74,8 +78,8 @@ export default function Onboarding({ lang, issue }: Props) {
       firstField.current?.focus();
       return;
     }
-    await saveProfile({ name: clean, college: col, address: addr, avatar });
-    await saveFavorites({ ...favs, sections: pins });
+    await saveProfile({ name: clean, color, address: addr, avatar });
+    await saveFavorites({ sections: pins, units: follows });
     dismissOnboarding();
     $sheet.set(null);
   }
@@ -95,6 +99,8 @@ export default function Onboarding({ lang, issue }: Props) {
 
   const togglePin = (id: SectionId) =>
     setPins((p) => (p.includes(id) ? p.filter((x) => x !== id) : p.length >= 5 ? p : [...p, id]));
+  const toggleFollow = (id: string) => setFollows((u) => (u.includes(id) ? u.filter((x) => x !== id) : [...u, id]));
+  const hue = accent(color);
 
   return (
     <div class="sheet-root" data-open={open} aria-hidden={!open}>
@@ -109,12 +115,12 @@ export default function Onboarding({ lang, issue }: Props) {
           <input id="ob-name" ref={firstField} class="field" type="text" autocomplete="given-name" maxLength={60} placeholder={t(lang, 'onboarding.namePlaceholder')} value={name} onInput={(e) => setName((e.currentTarget as HTMLInputElement).value)} aria-invalid={!!err && !name.trim()} aria-describedby={err ? 'ob-err' : undefined} />
 
           <fieldset class="sheet-fieldset">
-            <legend class="sheet-label">{t(lang, 'onboarding.college')}</legend>
-            <div class="college-grid">
-              {COLLEGES.map((c) => (
-                <label key={c.id} class="college-opt" style={{ '--c': c.color, '--ci': c.ink === 'ink' ? 'var(--ink)' : 'var(--beige)' } as never}>
-                  <input type="radio" name="college" value={c.id} checked={col === c.id} onChange={() => setCol(c.id)} />
-                  <span class="college-swatch" aria-hidden="true" />
+            <legend class="sheet-label">{t(lang, 'onboarding.color')}</legend>
+            <div class="hue-grid">
+              {ACCENTS.map((c) => (
+                <label key={c.id} class="hue-opt" style={{ '--c': c.color, '--ci': c.ink === 'ink' ? 'var(--ink)' : 'var(--beige)' } as never}>
+                  <input type="radio" name="color" value={c.id} checked={color === c.id} onChange={() => setColor(c.id)} />
+                  <span class="hue-swatch" aria-hidden="true" />
                   <span>{L(c.name, lang)}</span>
                 </label>
               ))}
@@ -122,13 +128,14 @@ export default function Onboarding({ lang, issue }: Props) {
           </fieldset>
 
           <fieldset class="sheet-fieldset">
-            <legend class="sheet-label">{t(lang, 'onboarding.address')}</legend>
-            <div class="seg" role="radiogroup">
-              {(['neutral', 'm', 'f'] as Address[]).map((a) => (
-                <label key={a} class="seg-opt">
-                  <input type="radio" name="address" value={a} checked={addr === a} onChange={() => setAddr(a)} />
-                  <span>{t(lang, `onboarding.addr.${a === 'neutral' ? 'n' : a}`)}</span>
-                </label>
+            <legend class="sheet-label">{t(lang, 'onboarding.units')}</legend>
+            <p class="pop-sub">{t(lang, 'onboarding.unitsHint')}</p>
+            <div class="chips">
+              {units.map((u) => (
+                <button key={u.id} type="button" class="chip pin" aria-pressed={follows.includes(u.id)} onClick={() => toggleFollow(u.id)}>
+                  <Star on={follows.includes(u.id)} />
+                  {L(u.name, lang)}
+                </button>
               ))}
             </div>
           </fieldset>
@@ -145,8 +152,20 @@ export default function Onboarding({ lang, issue }: Props) {
             </div>
           </fieldset>
 
+          <fieldset class="sheet-fieldset">
+            <legend class="sheet-label">{t(lang, 'onboarding.address')}</legend>
+            <div class="seg" role="radiogroup">
+              {(['neutral', 'm', 'f'] as Address[]).map((a) => (
+                <label key={a} class="seg-opt">
+                  <input type="radio" name="address" value={a} checked={addr === a} onChange={() => setAddr(a)} />
+                  <span>{t(lang, `onboarding.addr.${a === 'neutral' ? 'n' : a}`)}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
           <div class="sheet-photo">
-            <span class="av av-lg" aria-hidden="true" style={avatar ? undefined : { background: COLLEGES.find((c) => c.id === col)!.color }}>
+            <span class="av av-lg" aria-hidden="true" style={avatar ? undefined : { background: hue.color, color: hue.ink === 'ink' ? 'var(--ink)' : 'var(--beige)' }}>
               {avatar ? <img src={avatar} alt="" width={64} height={64} /> : initial(name)}
             </span>
             <div>
@@ -166,13 +185,5 @@ export default function Onboarding({ lang, issue }: Props) {
         </form>
       </div>
     </div>
-  );
-}
-
-export function Star({ on }: { on: boolean }) {
-  return (
-    <svg class="star" viewBox="0 0 24 24" width="18" height="18" fill={on ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
-      <path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1L3.2 9.6l6.1-.8z" />
-    </svg>
   );
 }

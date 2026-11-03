@@ -48,6 +48,33 @@ export function college(id: CollegeId): College {
   return c;
 }
 
+/** "Your color": the same seven brand accents the colleges use, chosen by the reader, named by hue. */
+export type AccentId = 'orange' | 'aqua' | 'navy' | 'clay' | 'gold' | 'crimson' | 'indigo';
+
+export interface Accent {
+  id: AccentId;
+  name: Localized;
+  color: string;
+  ink: 'ink' | 'beige';
+}
+
+export const ACCENTS: readonly Accent[] = [
+  { id: 'orange', name: { ar: 'برتقالي', en: 'Orange', enStatus: 'reviewed' }, color: 'var(--col-eng)', ink: 'ink' },
+  { id: 'aqua', name: { ar: 'فيروزي فاتح', en: 'Aqua', enStatus: 'reviewed' }, color: 'var(--col-comp)', ink: 'ink' },
+  { id: 'navy', name: { ar: 'كحلي', en: 'Navy', enStatus: 'reviewed' }, color: 'var(--col-biz)', ink: 'beige' },
+  { id: 'clay', name: { ar: 'طيني', en: 'Clay', enStatus: 'reviewed' }, color: 'var(--col-dbe)', ink: 'beige' },
+  { id: 'gold', name: { ar: 'ذهبي', en: 'Gold', enStatus: 'reviewed' }, color: 'var(--col-chem)', ink: 'ink' },
+  { id: 'crimson', name: { ar: 'قرمزي', en: 'Crimson', enStatus: 'reviewed' }, color: 'var(--col-pet)', ink: 'beige' },
+  { id: 'indigo', name: { ar: 'نيلي', en: 'Indigo', enStatus: 'reviewed' }, color: 'var(--col-gen)', ink: 'beige' },
+] as const;
+
+export function accent(id: AccentId | undefined): Accent {
+  return ACCENTS.find((x) => x.id === id) ?? ACCENTS[0];
+}
+
+/** Profiles saved before "your color" carried a college; this maps them to the matching accent. */
+export const COLLEGE_ACCENT: Record<CollegeId, AccentId> = { eng: 'orange', comp: 'aqua', biz: 'navy', dbe: 'clay', chem: 'gold', pet: 'crimson', gen: 'indigo' };
+
 export type SectionId = 'news' | 'guest' | 'experience' | 'contributions' | 'last';
 
 export const SECTIONS: readonly { id: SectionId; name: Localized }[] = [
@@ -65,7 +92,8 @@ export type Address = 'neutral' | 'm' | 'f';
 
 export interface Profile {
   name: string;
-  college: CollegeId;
+  /** The reader's accent: avatar, chip, their bars and stamps. */
+  color: AccentId;
   address: Address;
   /** Square JPEG data URL, 256px, or absent. */
   avatar?: string;

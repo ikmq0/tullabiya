@@ -43,6 +43,6 @@ export function usePopover() {
     setOpen(false);
     if (refocus) trigger.current?.focus();
   };
-  const panelClass = `popover${edge.end ? ' end' : ''}${edge.up ? ' up' : ''}`;
+  const panelClass = `popover${edge.end ? ' pop-end' : ''}${edge.up ? ' up' : ''}`;
   return { open, toggle, close, wrap, trigger, panel, panelClass };
 }

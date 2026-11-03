@@ -4,7 +4,7 @@ import type {
   Api, HuntSolved, HuntState, IssueProgress, PollState, ReactionKind, ReactionState, Submission, SubmissionKind,
 } from './Api';
 import { readJson, safeStorage, writeJson, type StorageLike } from './storage';
-import { EMPTY_FAVORITES, KEYS, type CollegeId, type Favorites, type Hunt, type Poll, type Profile } from '~/lib/model';
+import { COLLEGE_ACCENT, EMPTY_FAVORITES, KEYS, type CollegeId, type Favorites, type Hunt, type Poll, type Profile } from '~/lib/model';
 import { COMMUNITY, HUNTS, POLLS } from '~/data/interactive';
 import { breakdownVisible, tally } from '~/lib/poll';
 import { emptyProgress } from '~/lib/progress';
@@ -118,7 +118,7 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
       const byCollege: PollState['byCollege'] = {};
       for (const [c, seed] of Object.entries(p.seedByCollege) as [CollegeId, Record<string, number>][]) {
         const cc: Record<string, number> = {};
-        for (const o of p.options) cc[o.id] = (seed[o.id] ?? 0) + (my === o.id && s.profile?.college === c ? 1 : 0);
+        for (const o of p.options) cc[o.id] = seed[o.id] ?? 0;
         const tc = tally(cc);
         if (breakdownVisible(tc.total)) byCollege[c] = { n: tc.total, pct: tc.pct };
       }
@@ -163,7 +163,10 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
 
   return {
     async getProfile() {
-      return load().profile;
+      const p = load().profile as (Profile & { college?: CollegeId }) | null;
+      // Profiles saved before "your color" carried a college; keep them, mapped to the matching accent.
+      if (p && !p.color) return { name: p.name, address: p.address, avatar: p.avatar, color: COLLEGE_ACCENT[p.college ?? 'eng'] };
+      return p;
     },
     async saveProfile(p) {
       const s = load();

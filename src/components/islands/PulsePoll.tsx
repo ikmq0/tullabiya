@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { useStore } from '@nanostores/preact';
-import { t, tp, L } from '~/i18n';
-import { college, type Lang } from '~/lib/model';
+import { t, tp } from '~/i18n';
+import type { Lang } from '~/lib/model';
 import { getApi, type PollState } from '~/lib/api';
-import { BREAKDOWN_MIN } from '~/lib/poll';
-import { $profile, hydrate, markProgress } from '~/lib/store';
-import { useMounted } from '~/lib/useMounted';
+import { hydrate, markProgress } from '~/lib/store';
 
 interface Props {
   lang: Lang;
@@ -17,9 +14,6 @@ interface Props {
 
 /** Vote first, then the bars grow to the result (900ms ease-out) and keep moving while the poll is live. */
 export default function PulsePoll({ lang, issue, pollId, options, lead }: Props) {
-  const profileStore = useStore($profile);
-  const mounted = useMounted();
-  const profile = mounted ? profileStore : null;
   const [state, setState] = useState<PollState | null>(null);
   const [live, setLive] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -57,8 +51,6 @@ export default function PulsePoll({ lang, issue, pollId, options, lead }: Props)
   }
 
   const pct = (id: string) => state?.options.find((o) => o.id === id)?.pct ?? 0;
-  const mine = profile ? state?.byCollege?.[profile.college] : undefined;
-  const myOption = state?.myVote ? options.find((o) => o.id === state.myVote) : undefined;
   const announce = voted ? options.map((o) => `${o.label} ${pct(o.id)}%`).join(lang === 'ar' ? '، ' : ', ') : '';
 
   return (
@@ -85,9 +77,7 @@ export default function PulsePoll({ lang, issue, pollId, options, lead }: Props)
       </div>
       <p class="sr" aria-live="polite">{announce}</p>
       <p class="cmp" data-cmp>
-        {voted && mine && myOption && t(lang, 'pulse.compare', { college: L(college(profile!.college).name, lang), option: myOption.label, mine: mine.pct[myOption.id] ?? 0, all: pct(myOption.id) })}
-        {voted && profile && !mine && t(lang, 'pulse.breakdownSoon', { k: BREAKDOWN_MIN })}
-        {voted && !profile && state && tp(lang, 'pulse.votes', state.total)}
+        {voted && state && tp(lang, 'pulse.votes', state.total)}
         {!voted && t(lang, 'pulse.voteFirst')}
       </p>
       {voted && (

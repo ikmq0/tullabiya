@@ -1,7 +1,7 @@
 // A 1080x1350 share card drawn on canvas: the brand's slanted bars, KFUPM Display,
 // the quote or the cover, and the reader's name and photo when they have a profile.
 import type { Lang, Profile } from '~/lib/model';
-import { college } from '~/lib/model';
+import { accent } from '~/lib/model';
 import { displayName, initial } from '~/lib/name';
 
 export interface ShareCardOptions {
@@ -144,7 +144,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<ShareCard
   ctx.fillText(opts.issueLine, x0, 1160);
   if (opts.profile) {
     const p = opts.profile;
-    const c = college(p.college);
+    const c = accent(p.color);
     const cx = rtl ? 130 : W - 130;
     ctx.save();
     ctx.beginPath();

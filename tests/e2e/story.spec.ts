@@ -3,6 +3,11 @@ import { hydrated } from './helpers';
 
 const MUSAB = '/ar/issue/21/musab-the-message-that-changed-the-path/';
 
+// The first-read nudge (covered in personalization.spec) would open the sheet over these tests.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('tullabiya:v1:nudged', 'true'));
+});
+
 test('reading to the end marks the section and the home progress line moves', async ({ page }) => {
   await page.goto(MUSAB);
   await expect(page.locator('h1')).toContainText('مصعب');
@@ -44,7 +49,7 @@ test('renderShareCard returns a 1080x1350 PNG, personalized only with a profile'
   expect(anon).toMatchObject({ width: 1080, height: 1350, personalized: false, type: 'image/png' });
   expect(anon.size).toBeGreaterThan(5000);
   const mine = await page.evaluate(async () => {
-    const r = await window.__tullabiya!.renderShareCard({ kind: 'quote', quote: 'جملة', source: 'مصدر', issueLine: 'العدد 21', lang: 'ar', profile: { name: 'ريم', college: 'comp', address: 'f' } });
+    const r = await window.__tullabiya!.renderShareCard({ kind: 'quote', quote: 'جملة', source: 'مصدر', issueLine: 'العدد 21', lang: 'ar', profile: { name: 'ريم', color: 'aqua', address: 'f' } });
     return r.meta.personalized;
   });
   expect(mine).toBe(true);

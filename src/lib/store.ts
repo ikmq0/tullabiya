@@ -1,7 +1,7 @@
 // Shared reader state for the islands: profile, pins, progress. Hydrated once from the Api.
 import { atom } from 'nanostores';
 import { getApi, type IssueProgress } from '~/lib/api';
-import { EMPTY_FAVORITES, KEYS, type Favorites, type Profile, type SectionId } from '~/lib/model';
+import { accent, EMPTY_FAVORITES, KEYS, type Favorites, type Profile, type SectionId } from '~/lib/model';
 import { readJson, safeStorage, writeJson } from '~/lib/api/storage';
 
 export const $profile = atom<Profile | null>(null);
@@ -10,6 +10,29 @@ export const $progress = atom<IssueProgress | null>(null);
 export const $ready = atom(false);
 /** Which sheet is open, shared across islands. */
 export const $sheet = atom<'onboarding' | null>(null);
+/** "My favorites only": lists narrow to followed publishers and pinned sections. Persisted. */
+export const $forYou = atom(false);
+const FORYOU = 'tullabiya:v1:foryou';
+const NUDGED = 'tullabiya:v1:nudged';
+
+export function setForYou(on: boolean): void {
+  $forYou.set(on);
+  writeJson(safeStorage(), FORYOU, on);
+}
+
+/** Your color reaches CSS as --me: the bars, the marker, the stamps. */
+function applyAccent(p: Profile | null): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.style.setProperty('--me', p ? accent(p.color).color : '');
+}
+if (typeof document !== 'undefined') $profile.subscribe(applyAccent);
+
+/** Opens the sheet by itself once, after the first story is read, when the reader has no profile. */
+export function maybeNudge(): void {
+  if ($profile.get() || onboardingDismissed() || readJson(safeStorage(), NUDGED, false)) return;
+  writeJson(safeStorage(), NUDGED, true);
+  $sheet.set('onboarding');
+}
 
 export function onboardingDismissed(): boolean {
   return readJson(safeStorage(), KEYS.onboarding, false);
@@ -28,6 +51,7 @@ export function hydrate(issue: number): Promise<void> {
     $profile.set(p);
     $favorites.set(f);
     $progress.set(pr);
+    $forYou.set(readJson(safeStorage(), FORYOU, false));
     $ready.set(true);
   })();
   return hydrating;
@@ -56,6 +80,7 @@ export async function togglePinnedSection(id: SectionId): Promise<void> {
 
 export async function markProgress(issue: number, patch: Partial<IssueProgress>): Promise<void> {
   $progress.set(await getApi().markProgress(issue, patch));
+  if (patch.sectionsRead?.length) maybeNudge();
 }
 
 export async function resetAll(): Promise<void> {

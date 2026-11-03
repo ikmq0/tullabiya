@@ -9,6 +9,7 @@ import Reactions from '~/components/islands/Reactions';
 import ShareQuote from '~/components/islands/ShareQuote';
 import ReadingProgress from '~/components/islands/ReadingProgress';
 import SaveStory from '~/components/islands/SaveStory';
+import Onboarding from '~/components/islands/Onboarding';
 import { loadAll, personById, storiesOf, unitById } from '~/data';
 import { L, localized, t, tp } from '~/i18n';
 import { actionsFor } from '~/lib/entities';
@@ -25,6 +26,7 @@ export function getStaticPaths() {
 const lang = Astro.params.lang as Lang;
 const { story } = Astro.props as { story: Story };
 const bundle = loadAll();
+const unitList = bundle.units.map((u) => ({ id: u.id, name: u.name }));
 const issue = bundle.issues.find((i) => i.number === story.issue)!;
 const section = SECTIONS.find((s) => s.id === story.section)!;
 const title = localized(story.title, lang);
@@ -118,6 +120,7 @@ const isList = story.body?.ar.every((p) => /^\d+\. /.test(p));
       </section>
     )}
   </main>
+  <Onboarding client:idle lang={lang} issue={story.issue} units={unitList} />
   <Footer lang={lang} />
 </Base>
 

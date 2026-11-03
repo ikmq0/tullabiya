@@ -1,23 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { captureDownloads, hydrated, lastDownload } from './helpers';
 
-test('filtering by college narrows the list and clears back', async ({ page }) => {
+test('filtering by kind narrows the list and clears back', async ({ page }) => {
   await page.goto('/ar/calendar/');
   await hydrated(page, '.cal-page');
   await page.getByRole('button', { name: 'قائمة' }).click();
   await expect(page.locator('.cal-list')).toHaveAttribute('data-count', '7');
-  // Petroleum is excluded only from BCG; Design & Built Environment from BCG and both Career Talks.
-  await page.locator('.cal-filter select').first().selectOption('pet');
-  await expect(page.locator('.cal-list')).toHaveAttribute('data-count', '6');
-  await page.locator('.cal-filter select').nth(1).selectOption('career');
-  await expect(page.locator('.cal-list')).toHaveAttribute('data-count', '2');
-  await page.locator('.cal-filter select').first().selectOption('dbe');
-  await expect(page.locator('.cal-list')).toHaveAttribute('data-count', '0');
-  await expect(page.locator('.cal-empty')).toBeVisible();
-  await page.locator('.cal-filter select').nth(1).selectOption('competition');
+  await page.locator('.cal-filter select').selectOption('career');
+  await expect(page.locator('.cal-list')).toHaveAttribute('data-count', '3');
+  await page.locator('.cal-filter select').selectOption('competition');
   await expect(page.locator('.cal-list')).toHaveAttribute('data-count', '1');
-  await page.locator('.cal-filter select').first().selectOption('all');
-  await page.locator('.cal-filter select').nth(1).selectOption('all');
+  await page.locator('.cal-filter select').selectOption('all');
   await expect(page.locator('.cal-list')).toHaveAttribute('data-count', '7');
 });
 

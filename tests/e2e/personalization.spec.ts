@@ -32,7 +32,8 @@ test('completing the sheet personalizes the hero and chip, persists, and gendere
   await page.goto('/ar/');
   await openSheet(page);
   await page.getByLabel('اسمك').fill('ريم');
-  await page.getByText('الحاسب الآلي والرياضيات').click();
+  await page.getByText('فيروزي فاتح').click();
+  await page.locator('.sheet').getByRole('button', { name: 'إدارة توظيف وتدريب الطلاب' }).click();
   await page.getByText('بصيغة المؤنث').click();
   await page.locator('.sheet').getByRole('button', { name: 'ضيف الثلاثين' }).click();
   await page.getByRole('button', { name: 'احفظ' }).click();
@@ -41,6 +42,8 @@ test('completing the sheet personalizes the hero and chip, persists, and gendere
   await expect(page.locator('h1')).toContainText('هذا شهرك');
   await expect(page.locator('.me-chip')).toContainText('ريم');
   await expect(page.locator('.favs-in .chip.pin[aria-pressed="true"]')).toHaveCount(1);
+  await expect(page.locator('.legend')).toContainText('من جهاتك المفضلة');
+  await expect(page.locator('.day.mine')).toHaveCount(3);
   await page.reload();
   await expect(page.locator('h1')).toContainText('ريم');
   await expect(page.locator('.progress strong')).toContainText('قرأتِ');
@@ -68,3 +71,18 @@ for (const name of ['A', 'عبدالعزيزعبدالرحمنعبداللهال
     await expect(page.locator('.me-chip .av')).toBeVisible();
   });
 }
+
+test('the sheet opens by itself once, after the first story is read, and never again', async ({ page }) => {
+  await page.goto('/ar/issue/21/musab-the-message-that-changed-the-path/');
+  await page.locator('astro-island:has(.sheet-root):not([ssr])').first().waitFor({ state: 'attached' });
+  await page.locator('.story-end').scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 400);
+  await expect(page.locator('.sheet-root')).toHaveAttribute('data-open', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.sheet-root')).toHaveAttribute('data-open', 'false');
+  await page.reload();
+  await page.locator('.story-end').scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 400);
+  await page.waitForTimeout(600);
+  await expect(page.locator('.sheet-root')).toHaveAttribute('data-open', 'false');
+});

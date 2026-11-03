@@ -1,6 +1,6 @@
-// The month as thirty bars: tall where campus is busy, in your college's color where it concerns you.
-import type { EventItem, Profile } from '~/lib/model';
-import { isForMyCollege } from '~/lib/personalization';
+// The month as thirty bars: tall where campus is busy, in your color where a publisher you follow is on.
+import type { EventItem, Favorites } from '~/lib/model';
+import { isForMe } from '~/lib/personalization';
 
 export interface StripDay {
   day: number;
@@ -34,13 +34,13 @@ function quietHeight(year: number, month: number, day: number): number {
   return 20 + (x % 25);
 }
 
-export function buildStrip(events: EventItem[], year: number, month: number, profile: Profile | null): StripDay[] {
+export function buildStrip(events: EventItem[], year: number, month: number, favs: Favorites): StripDay[] {
   const n = daysInMonth(year, month);
   const out: StripDay[] = [];
   for (let d = 1; d <= n; d++) {
     const iso = isoDay(year, month, d);
     const evs = eventsOnDay(events, iso);
-    const mine = evs.some((e) => isForMyCollege(e, profile));
+    const mine = evs.some((e) => isForMe(e, favs));
     const heightPct = evs.length ? Math.min(100, 48 + evs.length * 26 + (d % 3) * 4) : quietHeight(year, month, d);
     out.push({ day: d, iso, heightPct, kind: mine ? 'mine' : evs.length ? 'all' : 'quiet', events: evs });
   }

@@ -1,7 +1,7 @@
 import { useEffect } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
 import { t, L } from '~/i18n';
-import { college, SECTION_IDS, type Lang, type Profile } from '~/lib/model';
+import { accent, SECTION_IDS, type Lang, type Profile } from '~/lib/model';
 import { displayName, initial, dirFor } from '~/lib/name';
 import { $profile, $sheet, hydrate, saveProfile, saveFavorites } from '~/lib/store';
 import { usePopover } from '~/lib/popover';
@@ -15,14 +15,14 @@ interface Props {
 
 /** Sample students for the `?demo=1` panel; names, colleges and reading history are invented.
  *  `read` lights those issues on the archive wall; `started` leaves one half-done. */
-export const PERSONAS: { profile: Profile; pins: ('news' | 'guest' | 'experience' | 'contributions' | 'last')[]; read: number[]; started: number[] }[] = [
-  { profile: { name: 'عبدالله', college: 'eng', address: 'm' }, pins: ['guest', 'contributions'], read: [17, 18, 19, 20], started: [16] },
-  { profile: { name: 'ريم', college: 'comp', address: 'f' }, pins: ['experience', 'news'], read: [20], started: [19] },
-  { profile: { name: 'Fahad', college: 'biz', address: 'm' }, pins: ['contributions'], read: [], started: [20] },
+export const PERSONAS: { profile: Profile; pins: ('news' | 'guest' | 'experience' | 'contributions' | 'last')[]; units: string[]; read: number[]; started: number[] }[] = [
+  { profile: { name: 'عبدالله', color: 'orange', address: 'm' }, pins: ['guest', 'contributions'], units: ['srt', 'sac'], read: [17, 18, 19, 20], started: [16] },
+  { profile: { name: 'ريم', color: 'aqua', address: 'f' }, pins: ['experience', 'news'], units: ['dsa', 'fawzan'], read: [20], started: [19] },
+  { profile: { name: 'Fahad', color: 'navy', address: 'm' }, pins: ['contributions'], units: ['sports'], read: [], started: [20] },
 ];
 
 export function Avatar({ profile, size = 40 }: { profile: Profile | null; size?: number }) {
-  const c = profile ? college(profile.college) : null;
+  const c = profile ? accent(profile.color) : null;
   const style = c ? { background: c.color, color: c.ink === 'ink' ? 'var(--ink)' : 'var(--beige)', inlineSize: size, blockSize: size } : { inlineSize: size, blockSize: size };
   if (profile?.avatar) return <img class="av" src={profile.avatar} alt="" width={size} height={size} style={{ inlineSize: size, blockSize: size }} />;
   return (
@@ -55,11 +55,10 @@ export default function ProfileChip({ lang, issue }: Props) {
         <Avatar profile={profile} />
         <span class="nm" dir={profile ? dirFor(profile.name) : undefined}>{name}</span>
       </button>
-      <div class={pop.panelClass + ' end'} ref={pop.panel} data-open={pop.open} role="dialog" aria-label={t(lang, 'profile.open')}>
+      <div class={pop.panelClass + ' pop-end'} ref={pop.panel} data-open={pop.open} role="dialog" aria-label={t(lang, 'profile.open')}>
         {profile && (
           <div class="pop-head">
             <p class="pop-title" dir={dirFor(profile.name)}>{profile.name}</p>
-            <p class="pop-sub">{L(college(profile.college).name, lang)}</p>
           </div>
         )}
         <ul class="menu">
@@ -83,7 +82,7 @@ export default function ProfileChip({ lang, issue }: Props) {
                       aria-pressed={profile?.name === p.profile.name}
                       onClick={async () => {
                         await saveProfile(p.profile);
-                        await saveFavorites({ sections: p.pins, units: [] });
+                        await saveFavorites({ sections: p.pins, units: p.units });
                         const api = getApi();
                         for (const n of p.read) await api.markProgress(n, { sectionsRead: [...SECTION_IDS], voted: true, huntAttempted: true });
                         for (const n of p.started) await api.markProgress(n, { sectionsRead: [SECTION_IDS[0]] });
@@ -92,7 +91,7 @@ export default function ProfileChip({ lang, issue }: Props) {
                     >
                       <Avatar profile={p.profile} size={28} />
                       <span dir={dirFor(p.profile.name)}>{p.profile.name}</span>
-                      <span class="pop-sub">{L(college(p.profile.college).name, lang)}</span>
+                      <span class="pop-sub">{L(accent(p.profile.color).name, lang)}</span>
                     </button>
                   </li>
                 ))}

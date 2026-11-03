@@ -74,12 +74,6 @@ describe('polls', () => {
     expect(s.byCollege?.comp).toBeDefined();
     expect(s.byCollege?.eng).toBeUndefined();
   });
-  it('my vote counts toward my own college breakdown', async () => {
-    const api = make();
-    await api.saveProfile({ name: 'ريم', college: 'comp', address: 'f' });
-    const s = await api.vote('p-small', 'b');
-    expect(s.byCollege?.comp?.n).toBe(41);
-  });
   it('subscribePoll ticks and stops after unsubscribe', async () => {
     vi.useFakeTimers();
     const api = make();
@@ -217,7 +211,7 @@ describe('reactions, upvotes, toggles', () => {
   });
   it('reset clears everything and export is JSON', async () => {
     const api = make();
-    await api.saveProfile({ name: 'سعد', college: 'eng', address: 'm' });
+    await api.saveProfile({ name: 'سعد', color: 'orange', address: 'm' });
     expect(JSON.parse(await api.exportAll()).profile.name).toBe('سعد');
     await api.reset();
     expect(await api.getProfile()).toBeNull();

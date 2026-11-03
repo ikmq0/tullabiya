@@ -3,8 +3,7 @@ import { Image } from 'astro:assets';
 import HeroGreeting from '~/components/islands/HeroGreeting';
 import { L, monthName, t } from '~/i18n';
 import { photo } from '~/lib/photos';
-import type { CollegeId, EventItem, Issue, Lang } from '~/lib/model';
-import { COLLEGES } from '~/lib/model';
+import type { EventItem, Issue, Lang } from '~/lib/model';
 
 interface Props {
   lang: Lang;
@@ -12,13 +11,12 @@ interface Props {
   events: EventItem[];
 }
 const { lang, issue, events } = Astro.props;
-const perCollege: Partial<Record<CollegeId, number>> = {};
-for (const c of COLLEGES) perCollege[c.id] = events.filter((e) => e.colleges !== 'all' && e.colleges.includes(c.id)).length;
+const eventUnits = events.map((e) => e.unitId);
 const month = monthName(lang, issue.year, issue.month);
 ---
 <section class="hero" aria-labelledby="hero-title">
   <div class="hero-copy">
-    <HeroGreeting client:load lang={lang} issue={issue.number} month={month} totalEvents={events.length} perCollege={perCollege} />
+    <HeroGreeting client:load lang={lang} issue={issue.number} month={month} totalEvents={events.length} eventUnits={eventUnits} />
     <div class="hero-cta">
       <a class="btn on-field" href="#month">{t(lang, 'hero.start')}</a>
       <a class="btn ghost on-field" href="#pulse">{t(lang, 'hero.quick')}</a>

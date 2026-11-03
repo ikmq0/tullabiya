@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
 import { t, L } from '~/i18n';
-import { college, EMPTY_FAVORITES, SECTIONS, type Lang, type Localized } from '~/lib/model';
+import { accent, EMPTY_FAVORITES, SECTIONS, type Lang, type Localized } from '~/lib/model';
 import { getApi } from '~/lib/api';
 import { $favorites, $profile, $sheet, hydrate, resetAll, saveFavorites, togglePinnedSection } from '~/lib/store';
 import { Avatar } from './ProfileChip';
@@ -58,7 +58,7 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
           <Avatar profile={profile} size={64} />
           <div>
             <p class="my-name">{profile ? profile.name : t(lang, 'profile.anon')}</p>
-            {profile && <p class="pop-sub">{L(college(profile.college).name, lang)}</p>}
+            {profile && <p class="pop-sub">{t(lang, 'my.color', { color: L(accent(profile.color).name, lang) })}</p>}
           </div>
           <button type="button" class="btn sm" onClick={() => $sheet.set('onboarding')}>{profile ? t(lang, 'profile.edit') : t(lang, 'profile.anon')}</button>
         </div>

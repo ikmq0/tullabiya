@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
 import { L, t, formatDate } from '~/i18n';
-import { COLLEGES, type CollegeId, type EventItem, type EventKind, type Lang } from '~/lib/model';
+import { type EventItem, type EventKind, type Lang } from '~/lib/model';
 import { buildMonthGrid, weekdayLabels } from '~/lib/calendarGrid';
 import { eventsOnDay, isoDay } from '~/lib/strip';
-import { isForMyCollege } from '~/lib/personalization';
+import { isForMe } from '~/lib/personalization';
+import ForYouToggle from './ForYouToggle';
 import { toIcsEvent } from '~/lib/ics';
 import { getApi } from '~/lib/api';
-import { $profile, hydrate } from '~/lib/store';
+import { $favorites, $forYou, hydrate } from '~/lib/store';
 import AddToCalendar, { downloadIcs } from './AddToCalendar';
 import { latin } from '~/lib/latin';
 
@@ -24,11 +25,11 @@ interface Props {
 
 const KINDS: EventKind[] = ['career', 'culture', 'national', 'conference', 'competition'];
 
-/** Grid or list, filtered by college and kind; every event adds to a calendar; the whole month in one file. */
+/** Grid or list, narrowed to what you follow and by kind; every event adds to a calendar; the whole month in one file. */
 export default function CalendarView({ lang, issue, year, month, monthLabel, events, unitNames, feedPath }: Props) {
-  const profile = useStore($profile);
+  const favs = useStore($favorites);
+  const forYou = useStore($forYou);
   const [view, setView] = useState<'grid' | 'list'>('list');
-  const [college, setCollege] = useState<'all' | CollegeId>('all');
   const [kind, setKind] = useState<'all' | EventKind>('all');
   const [day, setDay] = useState<number | null>(null);
   const [reminders, setReminders] = useState<string[]>([]);
@@ -43,8 +44,8 @@ export default function CalendarView({ lang, issue, year, month, monthLabel, eve
 
   const filtered = useMemo(
     () =>
-      events.filter((e) => (college === 'all' || e.colleges === 'all' || e.colleges.includes(college)) && (kind === 'all' || e.kind === kind)),
-    [events, college, kind],
+      events.filter((e) => (!forYou || isForMe(e, favs)) && (kind === 'all' || e.kind === kind)),
+    [events, forYou, favs, kind],
   );
   const grid = useMemo(() => buildMonthGrid(year, month), [year, month]);
   const labels = weekdayLabels(lang === 'ar' ? 'ar-SA' : 'en-GB');
@@ -57,15 +58,7 @@ export default function CalendarView({ lang, issue, year, month, monthLabel, eve
           <button type="button" class="seg-btn" aria-pressed={view === 'grid'} onClick={() => setView('grid')}>{t(lang, 'cal.grid')}</button>
           <button type="button" class="seg-btn" aria-pressed={view === 'list'} onClick={() => { setView('list'); setDay(null); }}>{t(lang, 'cal.list')}</button>
         </div>
-        <label class="cal-filter">
-          <span>{t(lang, 'cal.filterCollege')}</span>
-          <select class="field" value={college} onChange={(e) => setCollege((e.currentTarget as HTMLSelectElement).value as never)}>
-            <option value="all">{t(lang, 'cal.all')}</option>
-            {COLLEGES.map((c) => (
-              <option key={c.id} value={c.id}>{L(c.name, lang)}</option>
-            ))}
-          </select>
-        </label>
+        <ForYouToggle lang={lang} />
         <label class="cal-filter">
           <span>{t(lang, 'cal.filterKind')}</span>
           <select class="field" value={kind} onChange={(e) => setKind((e.currentTarget as HTMLSelectElement).value as never)}>
@@ -96,7 +89,7 @@ export default function CalendarView({ lang, issue, year, month, monthLabel, eve
                   <button key={ci} type="button" role="gridcell" class={`cal-cell${evs.length ? ' has' : ''}${day === d ? ' sel' : ''}`} aria-selected={day === d} onClick={() => setDay(day === d ? null : d)}>
                     <span class="cal-d">{d}</span>
                     {evs.slice(0, 3).map((e) => (
-                      <span key={e.id} class={`cal-ev${isForMyCollege(e, profile) ? ' mine' : ''}`}>{L(e.title, lang)}</span>
+                      <span key={e.id} class={`cal-ev${isForMe(e, favs) ? ' mine' : ''}`}>{L(e.title, lang)}</span>
                     ))}
                   </button>
                 );

@@ -27,17 +27,10 @@ test('vote first, then percentages that sum to 100, persisted across reload and 
   await expect(other.locator('.opt.b')).toBeDisabled();
 });
 
-test('comparison line depends on the college breakdown', async ({ page }) => {
+test('the votes line shows the running total after voting', async ({ page }) => {
   await ready(page);
   await page.locator('.opt.b').click();
   await expect(page.locator('[data-cmp]')).toContainText(/صوت/);
-  await page.locator('.hero astro-island:not([ssr])').first().waitFor({ state: 'attached' });
-  await page.locator('.hero-invite button').click();
-  await page.getByLabel('اسمك').fill('عبدالله');
-  await page.getByText('الهندسة والفيزياء').click();
-  await page.getByRole('button', { name: 'احفظ' }).click();
-  await expect(page.locator('[data-cmp]')).toContainText('الهندسة والفيزياء');
-  await expect(page.locator('[data-cmp]')).toContainText('%');
 });
 
 test('the serious poll records a vote and promises an answer', async ({ page }) => {
