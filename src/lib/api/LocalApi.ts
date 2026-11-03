@@ -17,6 +17,7 @@ interface HuntUserState {
   attempts: number[];
   clueIndex: number;
   solved?: HuntSolved;
+  winner?: { name: string; at: string; code: string };
 }
 
 interface State {
@@ -175,6 +176,7 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
       firstSeats: h.firstSeats,
       drawSeats: h.drawSeats,
       solved: u.solved,
+      winner: u.winner,
     };
   }
 
@@ -302,6 +304,24 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
       mark();
       save(s);
       return { ok: false, reason: 'wrong', state: huntState(id, s) };
+    },
+    async claimFound(id, name) {
+      const s = load();
+      const h = huntDef(id);
+      const u = huntUser(s, id);
+      const st = huntState(id, s);
+      if (u.winner) return { ok: false, reason: 'found', state: st };
+      if (st.closed) return { ok: false, reason: 'closed', state: st };
+      const clean = sanitizeText(name, 60);
+      if (!clean) return { ok: false, reason: 'empty', state: st };
+      const at = new Date(now()).toISOString();
+      const code = makeCode(rng);
+      u.winner = { name: clean, at, code };
+      u.solved = { rank: 1, seat: 'first', code, at };
+      const cur = s.progress[String(h.issue)] ?? emptyProgress(h.issue);
+      s.progress[String(h.issue)] = { ...cur, huntAttempted: true };
+      save(s);
+      return { ok: true, state: huntState(id, s) };
     },
     async getReactions(storyId) {
       return reactionState(storyId, load());

@@ -257,3 +257,24 @@ describe('stamps', () => {
     expect((await make(storage).getStamps()).length).toBe(1);
   });
 });
+
+describe('claimFound', () => {
+  it('records the finder once, hands out a code, marks the hunt attempted, and refuses a second claim', async () => {
+    const api = make();
+    const r = await api.claimFound('h', '  نورة  ');
+    expect(r.ok).toBe(true);
+    expect(r.state.winner?.name).toBe('نورة');
+    expect(r.state.winner?.code).toMatch(/^KFUPM-[A-Z]{4}$/);
+    expect((await api.getProgress(21)).huntAttempted).toBe(true);
+    const again = await api.claimFound('h', 'أحمد');
+    expect(again.ok).toBe(false);
+    expect(again.reason).toBe('found');
+    expect((await api.getHunt('h')).winner?.name).toBe('نورة');
+    expect((await api.getStamps()).map((s) => s.id)).toContain('first-solve');
+  });
+  it('an empty name claims nothing', async () => {
+    const r = await make().claimFound('h', '   ');
+    expect(r.reason).toBe('empty');
+    expect(r.state.winner).toBeUndefined();
+  });
+});

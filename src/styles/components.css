@@ -2125,3 +2125,40 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
     transform: translate(50%, 0);
   }
 }
+
+/* ---------- treasure hunt: week picker, found ---------- */
+.hunt-week {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-block-end: 18px;
+}
+.hunt-week-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+.hunt .seg-btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--beige);
+}
+.hunt-found {
+  margin-block: 6px 22px;
+}
+.hunt-found .found {
+  background: var(--ink);
+  color: var(--beige);
+}
+.hunt-found .hunt-msg {
+  margin-block-start: 10px;
+  min-block-size: 0;
+}
+.answer.claim .hunt-msg {
+  flex-basis: 100%;
+  min-block-size: 0;
+}
+.hunt-winner {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--h3);
+}

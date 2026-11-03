@@ -56,11 +56,13 @@ export interface HuntState {
   firstSeats: number;
   drawSeats: number;
   solved?: HuntSolved;
+  /** Who found the hidden logo (prototype: typed by the finder), with the pickup code. */
+  winner?: { name: string; at: string; code: string };
 }
 
 export interface HuntResult {
   ok: boolean;
-  reason?: 'wrong' | 'closed' | 'rate-limited' | 'empty';
+  reason?: 'wrong' | 'closed' | 'rate-limited' | 'empty' | 'found';
   state: HuntState;
 }
 
@@ -95,6 +97,8 @@ export interface Api {
   subscribePoll(id: string, cb: (s: PollState) => void): () => void;
   getHunt(id: string): Promise<HuntState>;
   submitHuntAnswer(id: string, text: string): Promise<HuntResult>;
+  /** "I found it": records the finder's name and hands out the pickup code. */
+  claimFound(id: string, name: string): Promise<HuntResult>;
   getReactions(storyId: string): Promise<ReactionState>;
   toggleReaction(storyId: string, kind: ReactionKind): Promise<ReactionState>;
   submitUserContent(kind: SubmissionKind, text: string, ref?: string): Promise<Submission>;
