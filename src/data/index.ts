@@ -5,11 +5,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import {
-  archiveSchema, communitySchema, eventSchema, huntSchema, issueSchema, personSchema, pollSchema, qaSchema,
+  archiveSchema, communitySchema, eventSchema, huntSchema, issueSchema, personSchema, pickupSchema, pollSchema, qaSchema,
   storySchema, unitSchema,
 } from './schemas';
 import type {
-  ArchiveEntry, Community, ContentBundle, EventItem, Hunt, Issue, Person, Poll, QaItem, Story, Unit,
+  ArchiveEntry, Community, ContentBundle, EventItem, Hunt, Issue, Person, PickupPoint, Poll, QaItem, Story, Unit,
 } from '~/lib/model';
 
 import issue21 from './issues/21.json';
@@ -21,6 +21,7 @@ import polls from './polls.json';
 import hunts from './hunts.json';
 import community from './community.json';
 import archive from './archive.json';
+import pickup from './pickup.json';
 
 const storyModules = import.meta.glob('./stories/*.json', { eager: true, import: 'default' }) as Record<string, unknown>;
 
@@ -62,6 +63,7 @@ export function loadAll(): ContentBundle {
     hunts: z.array(huntSchema).parse(hunts) as Hunt[],
     community: communitySchema.parse(community) as Community,
     archive: (archiveSchema.parse(archive) as ArchiveEntry[]).map((a) => onDisk(a)),
+    pickup: pickupSchema.parse(pickup) as PickupPoint[],
   };
   validateRefs(bundle);
   cache = bundle;
@@ -76,6 +78,7 @@ function validateRefs(b: ContentBundle): void {
   for (const s of b.stories) {
     if (storyIds.has(s.id)) throw new Error(`duplicate story id ${s.id}`);
     storyIds.add(s.id);
+    if (s.pdfRegion && !s.pdfPage) throw new Error(`story ${s.id}: a region needs a printed page`);
     if (s.authorId && !peopleIds.has(s.authorId)) throw new Error(`story ${s.id}: unknown author ${s.authorId}`);
     for (const u of s.unitIds) if (!unitIds.has(u)) throw new Error(`story ${s.id}: unknown unit ${u}`);
     for (const p of s.peopleIds ?? []) if (!peopleIds.has(p)) throw new Error(`story ${s.id}: unknown person ${p}`);

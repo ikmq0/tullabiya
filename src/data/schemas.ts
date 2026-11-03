@@ -63,6 +63,11 @@ export const storySchema = z.object({
   photoCredit: localized.optional(),
   /** Page in the printed issue; absent for web-only stories such as videos. */
   pdfPage: z.number().int().positive().optional(),
+  /** Where the story sits on that page, 0 to 1 from the top-left corner. Authored by eye, never by text matching. */
+  pdfRegion: z
+    .object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().positive().max(1), h: z.number().positive().max(1) })
+    .refine((r) => r.x + r.w <= 1.0001 && r.y + r.h <= 1.0001, { message: 'region runs off the page' })
+    .optional(),
   readingMinutes: z.number().int().positive(),
   video: z.object({ youtube: z.string().regex(/^[\w-]{11}$/), minutes: z.number().int().positive().optional() }).optional(),
   steps: z.array(z.object({ label: localized, when: localized, note: localized })).optional(),
@@ -138,6 +143,20 @@ export const archiveSchema = z.array(
     local: z.boolean().optional(),
   }),
 );
+
+/** Where hard copies are collected. Real data, so no `sample` flag; `strict` keeps invented extras out.
+ *  `room` and `mapUrl` are left out until the Deanship confirms them. */
+export const pickupSchema = z
+  .array(
+    z.strictObject({
+      id: z.string().regex(/^[a-z0-9-]+$/),
+      name: localized,
+      room: localized.optional(),
+      hours: localized.optional(),
+      mapUrl: z.url().optional(),
+    }),
+  )
+  .min(1);
 
 export type UnitIn = z.infer<typeof unitSchema>;
 export type PersonIn = z.infer<typeof personSchema>;

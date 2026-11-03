@@ -19,5 +19,6 @@
   "authorId": "abdulaziz-qaisi",
   "unitIds": ["mag"],
   "pdfPage": 7,
+  "pdfRegion": { "x": 0.045, "y": 0.243, "w": 0.91, "h": 0.552 },
   "readingMinutes": 6
 }

@@ -78,20 +78,11 @@ const title = t(lang, 'site.issueTitle', { issue: issue.number });
 const description = `${L(issue.coverLine, lang)}. ${L(lead.summary, lang)}`;
 ---
 <Base lang={lang} title={title} description={description}>
-  <div class="notice" role="note" data-notice>
-    <span>
-      {t(lang, 'notice.sample', { issue: issue.number })}
-      {lang === 'en' && ` ${t(lang, 'notice.machine')}`}
-    </span>
-    <button type="button" data-notice-hide>{t(lang, 'notice.hide')}</button>
-  </div>
   <TopBar lang={lang} issue={issue.number} current="home" />
   <main id="main">
     <Hero lang={lang} issue={issue} events={events} />
 
-    <section class="favs" aria-labelledby="favs-title">
-      <FavoritesBand client:idle lang={lang} issue={issue.number} items={favItems} />
-    </section>
+    <FavoritesBand client:idle lang={lang} issue={issue.number} items={favItems} />
 
     <section class="month sec" id="month" aria-labelledby="month-title">
       <div class="wrap">
@@ -164,7 +155,7 @@ const description = `${L(issue.coverLine, lang)}. ${L(lead.summary, lang)}`;
         <div>
           <h2 id="guest-title">{t(lang, 'guest.title', { name: L(guest.name, lang) })}</h2>
           {guestStory?.quote && <p class="quote">«{L(guestStory.quote, lang)}»</p>}
-          <p class="who">{guestStory ? L(guestStory.summary, lang) : t(lang, 'guest.lead')}</p>
+          <p class="who">{t(lang, 'guest.lead')}</p>
           {guestStory && (
             <p class="act-row" style="margin-block-start: 22px">
               <a class="btn sm on-field" href={`/${lang}/issue/${issue.number}/${guestStory.slug}/`}>{t(lang, 'voices.readStory')}</a>
@@ -176,17 +167,17 @@ const description = `${L(issue.coverLine, lang)}. ${L(lead.summary, lang)}`;
     </section>
 
     <VoicesBlock lang={lang} big={big} side={voicesSide} />
-    <OpportunitiesBlock lang={lang} events={events} today={TODAY} limit={3} />
+    <OpportunitiesBlock lang={lang} events={events} today={TODAY} limit={3} compact />
     <ArchiveTeaser lang={lang} issues={bundle.archive.map((a) => a.number).sort((a, b) => b - a)} currentIssue={issue.number} />
     <EditionRail client:idle lang={lang} sections={railSections} />
     <EndOfIssue client:visible lang={lang} issue={issue.number} nextDate={nextDate} sectionCount={SECTIONS.length} />
+    <div class="sample-note wrap" data-sample-note>
+      <p class="pop-sub">
+        {t(lang, 'notice.sample', { issue: issue.number })}
+        {lang === 'en' && ` ${t(lang, 'notice.machine')}`}
+      </p>
+    </div>
   </main>
   <Footer lang={lang} />
   <Onboarding client:idle lang={lang} issue={issue.number} units={unitList} />
 </Base>
-
-<script>
-  document.querySelector('[data-notice-hide]')?.addEventListener('click', () => {
-    document.querySelector('[data-notice]')?.remove();
-  });
-</script>

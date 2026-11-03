@@ -1,5 +1,6 @@
 ---
 import '~/styles/story.css';
+import '~/styles/reader-links.css';
 import { Image, getImage } from 'astro:assets';
 import Base from '~/layouts/Base.astro';
 import TopBar from '~/components/TopBar.astro';
@@ -17,6 +18,8 @@ import { actionsFor } from '~/lib/entities';
 import { photo, hasPhoto } from '~/lib/photos';
 import { SECTIONS, type Lang, type Story } from '~/lib/model';
 import { initial } from '~/lib/name';
+import { latinRuns } from '~/lib/latinRuns';
+import { adjacentStories, pageHref } from '~/lib/reader';
 
 export function getStaticPaths() {
   const b = loadAll();
@@ -43,6 +46,10 @@ const coverImg = await getImage({ src: photo(issue.coverPhoto), width: 1080, for
 const printed = story.pdfPage ? `/archive/${story.issue}/p${String(story.pdfPage).padStart(2, '0')}.jpg` : null;
 const pageTitle = `${title.text} | ${t(lang, 'site.name')}`;
 const isList = story.body?.ar.every((p) => /^\d+\. /.test(p));
+const storyHref = (s: Story) => `/${lang}/issue/${s.issue}/${s.slug}/`;
+const { prev, next } = adjacentStories(storiesOf(story.issue), story.id);
+const onDiskPages = bundle.archive.find((a) => a.number === story.issue)?.local;
+const seeOnPage = story.pdfPage && onDiskPages ? pageHref(lang, story.issue, story.pdfPage, story.id) : null;
 ---
 <Base lang={lang} title={pageTitle} description={L(story.summary, lang)}>
   <ReadingProgress client:load lang={lang} issue={story.issue} section={story.section} articleSelector="#story" />
@@ -110,8 +117,18 @@ const isList = story.body?.ar.every((p) => /^\d+\. /.test(p));
       <div class="story-end" aria-hidden="true"></div>
     </article>
 
+    <nav class="story-seq" aria-label={t(lang, 'read.storyNav')}>
+      {prev ? <a class="story-seq-prev" rel="prev" href={storyHref(prev)}><small>{t(lang, 'read.prevStory')}</small>{latinRuns(L(prev.title, lang)).map((r) => (r.nowrap ? <span class="nowrap">{r.text}</span> : r.text))}</a> : <span />}
+      {next ? (
+        <a class="story-seq-next" rel="next" href={storyHref(next)}><small>{t(lang, 'read.nextStory')}</small>{latinRuns(L(next.title, lang)).map((r) => (r.nowrap ? <span class="nowrap">{r.text}</span> : r.text))}</a>
+      ) : (
+        <a class="story-seq-next" rel="next" href={`/${lang}/read/${story.issue}/end/`}><small>{t(lang, 'read.nextStory')}</small>{t(lang, 'read.toEnd')}</a>
+      )}
+    </nav>
+
     {printed && <section class="printed" aria-labelledby="printed-title">
       <h2 id="printed-title">{t(lang, 'story.printed')}</h2>
+      {seeOnPage && <p class="story-see"><a href={seeOnPage}>{t(lang, 'read.seeOnPage', { n: story.pdfPage })}</a></p>}
       <img src={printed} alt={t(lang, 'story.printedAlt', { n: story.pdfPage })} width={918} height={1298} loading="lazy" />
     </section>}
 

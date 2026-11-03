@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 // Every page, both languages: nothing lays out past the content box. scrollWidth alone misses
 // two cases this catches: RTL overflow on the left, and the mobile layout viewport growing to fit
 // an over-wide element (which then shows as a zoomed-out page on a real phone).
-const PATHS = ['/', '/calendar/', '/opportunities/', '/community/', '/my/', '/archive/', '/archive/21/'];
+const PATHS = ['/', '/calendar/', '/opportunities/', '/community/', '/my/', '/archive/', '/archive/21/', '/read/21/', '/read/21/?p=3', '/read/3/', '/read/21/end/', '/read/3/end/', '/hard-copy/'];
 
 for (const lang of ['ar', 'en'] as const) {
   for (const path of PATHS) {

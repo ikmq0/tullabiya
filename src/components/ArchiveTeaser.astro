@@ -5,15 +5,17 @@ import type { Lang } from '~/lib/model';
 
 interface Props {
   lang: Lang;
+  /** Newest first; the teaser shows the first few and links to the rest. */
   issues: number[];
   currentIssue: number;
 }
+const RECENT = 4;
 const { lang, issues, currentIssue } = Astro.props;
 ---
 <section class="arch sec" id="arch" aria-labelledby="arch-title">
   <div class="wrap">
     <h2 id="arch-title">{tp(lang, 'arch.title', issues.length)}</h2>
-    <p class="lead">{t(lang, 'arch.lead')}</p>
-    <ArchiveWall client:visible lang={lang} issues={issues} currentIssue={currentIssue} />
+    <ArchiveWall client:visible lang={lang} issues={issues.slice(0, RECENT)} currentIssue={currentIssue} note={false} />
+    <p class="arch-all"><a href={`/${lang}/archive/`}>{t(lang, 'arch.all')}</a></p>
   </div>
 </section>

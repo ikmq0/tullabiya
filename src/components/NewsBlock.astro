@@ -1,11 +1,7 @@
 ---
 import { Image } from 'astro:assets';
-import EntityChip from '~/components/islands/EntityChip';
 import { L, t } from '~/i18n';
 import { photo, hasPhoto } from '~/lib/photos';
-import { actionsFor } from '~/lib/entities';
-import { loadAll, unitById } from '~/data';
-import LiteVideo from '~/components/islands/LiteVideo';
 import type { Lang, Story } from '~/lib/model';
 
 interface Props {
@@ -14,13 +10,7 @@ interface Props {
   side: Story[];
 }
 const { lang, lead, side } = Astro.props;
-const bundle = loadAll();
 const href = (s: Story) => `/${lang}/issue/${s.issue}/${s.slug}/`;
-const unitChip = (unitId: string, subject: string) => {
-  const u = unitById(unitId);
-  return { id: u.id, name: L(u.name, lang), actions: actionsFor({ kind: 'unit', id: u.id }, bundle, subject) };
-};
-const leadUnit = unitChip(lead.unitIds[0], L(lead.title, lang));
 const leadPhotos = (lead.photos ?? [lead.photo]).filter(hasPhoto).slice(0, 3);
 ---
 <section class="news sec" id="news" aria-labelledby="news-title">
@@ -36,53 +26,18 @@ const leadPhotos = (lead.photos ?? [lead.photo]).filter(hasPhoto).slice(0, 3);
         </div>
         <h3><a href={href(lead)}>{L(lead.title, lang)}</a></h3>
         <p>{L(lead.summary, lang)}</p>
-        {lead.steps && (
-          <div class="steps" role="group" aria-label={t(lang, 'news.steps')} data-steps>
-            {lead.steps.map((s, i) => (
-              <button class="step" type="button" aria-pressed={i === 0} data-note={L(s.note, lang)}>
-                <span>{L(s.label, lang)}</span>
-                <small>{L(s.when, lang)}</small>
-              </button>
-            ))}
-          </div>
-        )}
-        {lead.steps && <p class="step-note" data-step-note aria-live="polite">{L(lead.steps[0].note, lang)}</p>}
         <div class="act-row">
-          <EntityChip client:visible lang={lang} kind="unit" id={leadUnit.id} name={leadUnit.name} actions={leadUnit.actions} variant="button" />
           <a class="btn sm ghost" href={href(lead)}>{t(lang, 'news.read')}</a>
         </div>
       </article>
-      <div class="side-stories">
-        {side.map((s) => {
-          const u = unitChip(s.unitIds[0], L(s.title, lang));
-          return (
-            <article class="side-story" data-fy data-units={s.unitIds.join(',')} data-section={s.section}>
-              <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
-              {s.video && <LiteVideo client:visible lang={lang} id={s.video.youtube} title={L(s.title, lang)} minutes={s.video.minutes} />}
-              {!s.video && hasPhoto(s.photo) && <Image src={photo(s.photo)} alt={L(s.photoAlt ?? s.title, lang)} widths={[480, 800]} sizes="(max-width: 1023px) 100vw, 30vw" loading="lazy" />}
-              <h3><a href={href(s)}>{L(s.title, lang)}</a></h3>
-              <p>{L(s.summary, lang)}</p>
-              <div class="act-row">
-                <EntityChip client:visible lang={lang} kind="unit" id={u.id} name={u.name} actions={u.actions} variant="button" />
-                <a class="btn sm ghost" href={href(s)}>{t(lang, 'news.read')}</a>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      <ul class="title-links">
+        {side.map((s) => (
+          <li data-fy data-units={s.unitIds.join(',')} data-section={s.section}>
+            <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
+            <a href={href(s)}>{L(s.title, lang)}</a>
+          </li>
+        ))}
+      </ul>
     </div>
   </div>
 </section>
-
-<script>
-  // Stepper for the lead story: a state change, so the note swaps and the pressed step moves.
-  document.querySelectorAll<HTMLElement>('[data-steps]').forEach((group) => {
-    const note = group.parentElement?.querySelector<HTMLElement>('[data-step-note]');
-    group.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.step');
-      if (!btn) return;
-      group.querySelectorAll('.step').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
-      if (note) note.textContent = btn.dataset.note ?? '';
-    });
-  });
-</script>

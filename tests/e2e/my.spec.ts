@@ -1,11 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { captureDownloads, hydrated, lastDownload } from './helpers';
 
-// The first-read nudge (covered in personalization.spec) would open the sheet over the story tests here.
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('tullabiya:v1:nudged', 'true'));
-});
-
 const STORIES = [
   '/ar/issue/21/orientation-2026/',
   '/ar/issue/21/guest-badr-alhumaidi/',

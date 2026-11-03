@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { expectNoHorizontalScroll } from './helpers';
 
 /** Every UI string 40% longer: no horizontal overflow, headings still within two lines. */
-const ROUTES = ['/', '/calendar/', '/opportunities/', '/community/', '/my/', '/archive/', '/archive/21/'];
+const ROUTES = ['/', '/calendar/', '/opportunities/', '/community/', '/my/', '/archive/', '/archive/21/', '/read/21/', '/read/21/end/', '/hard-copy/'];
 
 for (const lang of ['ar', 'en'] as const) {
   test(`lengthened text does not break the layout (${lang})`, async ({ page }) => {

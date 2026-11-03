@@ -1,0 +1,238 @@
+/* What the reader adds to the site's own pages: story and issue links, the end of an issue, the hard copy,
+   and the reader's marks in My Corner. */
+
+.reader {
+  padding-block: clamp(20px, 4vw, 48px) var(--gap-sm);
+}
+.reader-head h1 {
+  font-size: var(--h2);
+  margin-block-end: 6px;
+}
+.reader-line {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--h3);
+  line-height: 1.3;
+}
+.reader-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  margin-block-start: 6px;
+  font-size: var(--text-sm);
+}
+.reader-links a,
+.story-see a,
+.hard-ask a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+}
+
+/* ---------- issue and story links ---------- */
+.issue-nav,
+.story-seq {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-inline-size: 720px;
+}
+.issue-nav {
+  margin-block-start: 24px;
+}
+.issue-nav a,
+.story-seq a {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-block-size: var(--tap);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+.issue-nav a {
+  min-block-size: 64px;
+  padding: 10px 14px;
+  background: var(--bg2);
+}
+.issue-nav small,
+.story-seq small {
+  color: var(--fg2);
+}
+.issue-nav strong {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--text-lg);
+}
+.issue-nav-next,
+.story-seq-next {
+  grid-column: 2;
+  text-align: end;
+}
+.issue-nav-prev,
+.story-seq-prev {
+  grid-column: 1;
+}
+/* Small on purpose: two plain lines of text under the story. */
+.story-seq {
+  margin-block-start: 24px;
+}
+.story-seq a {
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.story-seq small {
+  display: block;
+}
+.story-see {
+  margin-block-end: 8px;
+  font-size: var(--text-sm);
+}
+
+/* ---------- sections and their stories, on the end screen ---------- */
+.reader-sec {
+  margin-block-end: 28px;
+}
+.reader-sec-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  border-block-end: 3px solid var(--fg);
+  padding-block-end: 6px;
+}
+.reader-sec-head h2 {
+  font-size: var(--h3);
+  font-weight: 900;
+  line-height: 1.25;
+}
+.reader-rows {
+  list-style: none;
+  padding: 0;
+}
+.reader-row {
+  border-block-end: 2px solid var(--bg2);
+}
+.reader-row-main {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-block-size: 56px;
+  padding-block: 10px;
+  text-decoration: none;
+}
+.reader-row-title {
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.reader-row-main small {
+  color: var(--fg2);
+}
+
+/* ---------- the end of an issue ---------- */
+.reader-end .reader-head {
+  margin-block-end: 20px;
+}
+.end-line {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  margin-block-end: 16px;
+}
+.end-read {
+  color: var(--fg2);
+  font-weight: 700;
+}
+.end-hard {
+  margin-block-start: 28px;
+  padding: 20px;
+  background: var(--bg2);
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  max-inline-size: 720px;
+}
+.end-hard h2 {
+  font-size: var(--h3);
+}
+
+/* ---------- the hard copy ---------- */
+.hard-grid {
+  display: grid;
+  gap: 28px;
+}
+.hard h1 {
+  font-size: var(--h2);
+  margin-block-end: 8px;
+}
+.hard-point {
+  margin-block: 24px 16px;
+  padding-block: 14px;
+  border-block-start: 4px solid var(--fg);
+}
+.hard-label {
+  color: var(--fg2);
+  font-size: var(--text-sm);
+}
+.hard-point h2 {
+  font-size: var(--h3);
+  font-weight: 900;
+  line-height: 1.3;
+  margin-block-end: 8px;
+}
+.hard-ask {
+  color: var(--fg2);
+  font-size: var(--text-sm);
+  margin-block-end: 20px;
+  overflow-wrap: anywhere;
+}
+.hard-cover {
+  --slant: 40px;
+  max-inline-size: 300px;
+}
+.hard-cover img {
+  inline-size: 100%;
+}
+
+/* ---------- my corner ---------- */
+.my-notes-issue {
+  margin-block-start: 12px;
+}
+.my-notes-issue h3 {
+  font-size: var(--text-lg);
+}
+.my-notes-page h4 {
+  margin-block: 10px 4px;
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+.my-notes ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.my-note {
+  display: block;
+  max-inline-size: 420px;
+}
+.my-note .mark-crop,
+.my-notes .mark-crop {
+  display: block;
+  inline-size: 100%;
+  max-block-size: 160px;
+  background-color: var(--white);
+}
+.my-notes-comment {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 720px) {
+  .hard-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+  }
+}

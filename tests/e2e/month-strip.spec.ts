@@ -46,10 +46,20 @@ test('arrow keys move in reading direction', async ({ page }) => {
   await expect(page.locator('.day').nth(15)).toBeFocused();
 });
 
-test('the selected day is inside the visible strip area', async ({ page }) => {
+test('no day is open until one is tapped, and tapping it again closes it', async ({ page }) => {
+  await ready(page);
+  await expect(page.locator('.detail')).toHaveCount(0);
+  await expect(page.locator('.day[aria-pressed="true"]')).toHaveCount(0);
+  await page.locator('.day').nth(14).click();
+  await expect(page.locator('.detail h3')).toContainText('BCG');
+  await page.locator('.day').nth(14).click();
+  await expect(page.locator('.detail')).toHaveCount(0);
+});
+
+test('the current day is inside the visible strip area', async ({ page }) => {
   await ready(page);
   const sc = await page.locator('.strip-scroll').boundingBox();
-  const sel = await page.locator('.day[aria-pressed="true"]').boundingBox();
+  const sel = await page.locator('.day[tabindex="0"]').boundingBox();
   expect(sel!.x).toBeGreaterThanOrEqual(sc!.x - 1);
   expect(sel!.x + sel!.width).toBeLessThanOrEqual(sc!.x + sc!.width + 1);
 });

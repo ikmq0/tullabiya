@@ -1,0 +1,9 @@
+---
+// `/read/` opens the current issue. In the static build Astro writes this as a meta refresh with a link.
+import { currentIssue } from '~/data';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'ar' } }, { params: { lang: 'en' } }];
+}
+return Astro.redirect(`/${Astro.params.lang}/read/${currentIssue().number}/`);
+---

@@ -3,10 +3,11 @@ import { hydrated } from './helpers';
 
 const KEY = 'tullabiya:v1:state';
 
-test('a first visit says nothing; a return after a break reports new votes and a new clue', async ({ page }) => {
+test('a first visit says nothing, and neither does a return after a break, though the visit is still recorded', async ({ page }) => {
   await page.goto('/ar/');
   await hydrated(page, '.hero');
   await expect(page.locator('[data-since]')).toHaveCount(0);
+  await page.waitForFunction((key) => !!JSON.parse(localStorage.getItem(key) || '{}').lastVisit, KEY);
   // Pretend the previous visit was three hours ago, when only one clue was open.
   await page.evaluate((key) => {
     const s = JSON.parse(localStorage.getItem(key) || '{}');
@@ -15,11 +16,7 @@ test('a first visit says nothing; a return after a break reports new votes and a
   }, KEY);
   await page.reload();
   await hydrated(page, '.hero');
-  await expect(page.locator('[data-since]')).toContainText('منذ زيارتك الأخيرة');
-  await expect(page.locator('[data-since]')).toContainText('21 صوتاً');
-  await expect(page.locator('[data-since]')).toContainText('دليل جديد');
-  // A reload within the same session keeps the same line.
-  await page.reload();
-  await hydrated(page, '.hero');
-  await expect(page.locator('[data-since]')).toContainText('21 صوتاً');
+  await page.waitForFunction((key) => JSON.parse(localStorage.getItem(key) || '{}').lastVisit.at > Date.now() - 3_600_000, KEY);
+  await expect(page.locator('[data-since]')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText('منذ زيارتك');
 });

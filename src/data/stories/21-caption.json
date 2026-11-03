@@ -19,5 +19,6 @@
   "photoAlt": { "ar": "حروف KFUPM الضخمة على التلة المطلة على طريق الجامعة", "en": "The giant KFUPM letters on the hill above the campus road", "enStatus": "machine" },
   "photoCredit": { "ar": "تصوير الطالبة فاطمة حامد اللحياني", "en": "Photo by Fatimah Hamid Al-Lihyani", "enStatus": "machine" },
   "pdfPage": 8,
+  "pdfRegion": { "x": 0.045, "y": 0.065, "w": 0.465, "h": 0.575 },
   "readingMinutes": 1
 }

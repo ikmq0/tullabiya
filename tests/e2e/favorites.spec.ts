@@ -10,17 +10,15 @@ async function persona(page: Page) {
   await expect(page.locator('.me-chip')).toContainText('عبدالله');
 }
 
-test('without favorites the band invites, and the toggle is off', async ({ page }) => {
+test('without favorites there is no band at all', async ({ page }) => {
   await page.goto('/ar/');
-  await hydrated(page, '.favs-in');
-  await expect(page.locator('.favs-items')).toHaveAttribute('data-following', 'false');
-  await expect(page.locator('.favs-items .favs-empty')).toContainText('تابع جهة');
-  await expect(page.locator('.favs-items .chip.foryou')).toBeDisabled();
+  await hydrated(page, '.hero');
+  await page.waitForTimeout(600);
+  await expect(page.locator('.favs')).toHaveCount(0);
 });
 
-test('following publishers fills the band, marks their rows, and the toggle dims the rest', async ({ page }) => {
+test('following publishers brings the band, marks their rows, and the toggle dims the rest', async ({ page }) => {
   await persona(page);
-  await expect(page.locator('.favs-items')).toHaveAttribute('data-following', 'true');
   await expect(page.locator('.fav-list li')).toHaveCount(4);
   await expect(page.locator('.opp .row[data-fy="1"]').first()).toBeVisible();
   await expect(page.locator('.opp .row[data-fy="1"] .fy-mark').first()).toBeVisible();
@@ -30,9 +28,28 @@ test('following publishers fills the band, marks their rows, and the toggle dims
   const dimmed = page.locator('[data-fy="0"]:not([data-nodim])').first();
   await expect(dimmed).toHaveCSS('opacity', '0.38');
   await page.reload();
-  await hydrated(page, '.favs-in');
+  await page.locator('.favs-in').waitFor();
   await expect(page.locator('html')).toHaveAttribute('data-foryou', '');
   await expect(page.locator('.favs-items .chip.foryou')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('removing every favorite takes the band away again', async ({ page }) => {
+  await persona(page);
+  await expect(page.locator('.favs')).toBeVisible();
+  await page.goto('/ar/my/');
+  await hydrated(page, '.my');
+  await expect(page.locator('.my .chip.pin[aria-pressed="true"]').first()).toBeVisible();
+  const pressed = page.locator('.my .chip.pin[aria-pressed="true"]');
+  while ((await pressed.count()) > 0) {
+    const before = await pressed.count();
+    await pressed.first().click();
+    await expect(pressed).toHaveCount(before - 1);
+  }
+  await page.goto('/ar/');
+  await hydrated(page, '.hero');
+  await page.waitForTimeout(600);
+  await expect(page.locator('.favs')).toHaveCount(0);
+  await expect(page.locator('html')).not.toHaveAttribute('data-foryou', '');
 });
 
 test('the opportunities page hides rows outside your favorites when the toggle is on', async ({ page }) => {
@@ -51,17 +68,16 @@ test('the opportunities page hides rows outside your favorites when the toggle i
   await expect(page.locator('.opp .row[data-fy="0"]').first()).toBeVisible();
 });
 
-test('a publisher can be followed from its chip in a story', async ({ page }) => {
-  await page.goto('/ar/');
-  await hydrated(page, '.favs-in');
-  const story = page.locator('.side-story').first();
-  await story.scrollIntoViewIfNeeded();
-  await page.locator('.side-story astro-island:not([ssr])').first().waitFor({ state: 'attached' });
-  const chip = story.locator('.chip-wrap .btn').first();
-  await chip.click();
-  await page.locator('.side-story .popover[data-open="true"] .menu-item.follow').click();
-  await expect(page.locator('.side-story .popover[data-open="true"] .menu-item.follow')).toHaveAttribute('aria-pressed', 'true');
+test('a publisher can be followed from its chip in a story, and the home follows', async ({ page }) => {
+  await page.goto('/ar/issue/21/orientation-2026/');
+  await page.locator('.story-meta astro-island:not([ssr])').first().waitFor({ state: 'attached' });
+  await page.locator('.story-meta .chip-wrap > .chip').first().click();
+  const follow = page.locator('.story-meta .popover[data-open="true"] .menu-item.follow');
+  await follow.click();
+  await expect(follow).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('Escape');
-  await expect(page.locator('.favs-items')).toHaveAttribute('data-following', 'true');
-  await expect(page.locator('.side-story[data-fy="1"]').first()).toBeVisible();
+  await page.goto('/ar/');
+  await hydrated(page, '.hero');
+  await expect(page.locator('.favs')).toBeVisible();
+  await expect(page.locator('.news-grid [data-fy="1"]').first()).toBeVisible();
 });

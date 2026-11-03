@@ -82,6 +82,36 @@ export interface Submission {
   status: 'pending';
 }
 
+/** Where a reader left an issue in the digital reader. */
+export interface ReaderPosition {
+  issue: number;
+  /** 1-based printed page. */
+  page: number;
+  /** The story being read on that page, when the reader went to one. */
+  storyId?: string;
+}
+
+/** A rectangle on a printed page, normalized 0 to 1 from the page's top-left corner. */
+export interface MarkRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The reader's own mark on a printed page. Private to the device unless the comment is sent to the editors. */
+export interface PageMark {
+  id: string;
+  issue: number;
+  page: number;
+  rects: MarkRect[];
+  comment: string;
+  /** The submission id once sent to the editors. */
+  sentId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Api {
   getProfile(): Promise<Profile | null>;
   saveProfile(p: Profile): Promise<void>;
@@ -90,6 +120,14 @@ export interface Api {
   saveFavorites(f: Favorites): Promise<void>;
   getProgress(issue: number): Promise<IssueProgress>;
   markProgress(issue: number, patch: Partial<IssueProgress>): Promise<IssueProgress>;
+  /** The last page read in the digital reader for one issue; null when the reader has not been there. */
+  getReaderPosition(issue: number): Promise<ReaderPosition | null>;
+  saveReaderPosition(issue: number, page: number, storyId?: string): Promise<ReaderPosition>;
+  /** The reader's marks, oldest first; all of them, or one issue's. */
+  listMarks(issue?: number): Promise<PageMark[]>;
+  addMark(issue: number, page: number, rects: MarkRect[], comment?: string): Promise<PageMark>;
+  updateMark(id: string, patch: { comment?: string; sentId?: string }): Promise<PageMark>;
+  deleteMark(id: string): Promise<void>;
   getPoll(id: string): Promise<PollState>;
   vote(id: string, optionId: string): Promise<PollState>;
   subscribePoll(id: string, cb: (s: PollState) => void): () => void;

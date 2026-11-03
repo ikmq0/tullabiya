@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
+const MUSAB = '/ar/issue/21/musab-the-message-that-changed-the-path/';
+
 async function deck(page: Page, lang: 'ar' | 'en') {
   await page.goto(`/${lang}/#guest`);
   await page.locator('#guest').scrollIntoViewIfNeeded();
@@ -38,8 +40,8 @@ test('a reader answer goes to review; an empty one is refused', async ({ page })
 });
 
 test('a reaction toggles and persists', async ({ page }) => {
-  await page.goto('/ar/#voices');
-  const first = page.locator('.vo.big .react').first();
+  await page.goto(MUSAB);
+  const first = page.locator('.story-actions .react').first();
   await first.scrollIntoViewIfNeeded();
   await expect(first).toBeEnabled();
   const before = parseInt((await first.locator('.n').textContent()) ?? '0', 10);
@@ -47,7 +49,7 @@ test('a reaction toggles and persists', async ({ page }) => {
   await expect(first).toHaveAttribute('aria-pressed', 'true');
   await expect(first.locator('.n')).toHaveText(String(before + 1));
   await page.reload();
-  const again = page.locator('.vo.big .react').first();
+  const again = page.locator('.story-actions .react').first();
   await again.scrollIntoViewIfNeeded();
   await expect(again).toHaveAttribute('aria-pressed', 'true');
   await expect(again.locator('.n')).toHaveText(String(before + 1));

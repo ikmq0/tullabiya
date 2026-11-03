@@ -10,7 +10,6 @@ export const KEYS = {
   theme: 'tullabiya:v1:theme',
   lang: 'tullabiya:v1:lang',
   state: 'tullabiya:v1:state',
-  onboarding: 'tullabiya:v1:onboarding',
 } as const;
 
 /** Arabic is the source language. English is optional per field. */
@@ -166,6 +165,8 @@ export interface Story {
   photoAlt?: Localized;
   photoCredit?: Localized;
   pdfPage?: number;
+  /** Where the story sits on that page, 0 to 1 from the top-left corner. */
+  pdfRegion?: { x: number; y: number; w: number; h: number };
   readingMinutes: number;
   /** A YouTube video in place of the photo. */
   video?: { youtube: string; minutes?: number };
@@ -253,6 +254,15 @@ export interface ArchiveEntry {
   local?: boolean;
 }
 
+/** A place to collect the printed issue. Only what the Deanship has confirmed is filled in. */
+export interface PickupPoint {
+  id: string;
+  name: Localized;
+  room?: Localized;
+  hours?: Localized;
+  mapUrl?: string;
+}
+
 export interface ContentBundle {
   issues: Issue[];
   stories: Story[];
@@ -264,4 +274,5 @@ export interface ContentBundle {
   hunts: Hunt[];
   community: Community;
   archive: ArchiveEntry[];
+  pickup: PickupPoint[];
 }

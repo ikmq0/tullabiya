@@ -5,10 +5,10 @@ import { accent, EMPTY_FAVORITES, SECTIONS, type Lang, type Localized } from '~/
 import { getApi } from '~/lib/api';
 import { $favorites, $profile, $sheet, $stamps, hydrate, resetAll, saveFavorites, togglePinnedSection } from '~/lib/store';
 import { STAMP_IDS } from '~/lib/stamps';
-import { StampMark } from './StampToast';
 import { Avatar } from './ProfileChip';
 import { Star } from './Onboarding';
 import ArchiveWall from './ArchiveWall';
+import MyNotes from './MyNotes';
 import MySubmissions from './MySubmissions';
 import { useMounted } from '~/lib/useMounted';
 
@@ -20,7 +20,17 @@ interface Props {
   stories: Record<string, { title: string; url: string }>;
 }
 
-/** Everything the reader owns, on one page: profile, pins, saved, fingerprints, submissions, data. */
+/** The octagon stamp, filled in your color. */
+function StampMark({ on, size = 28 }: { on: boolean; size?: number }) {
+  return (
+    <svg class="stamp-mark" viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M8.5 2h7l6.5 6.5v7L15.5 22h-7L2 15.5v-7z" fill={on ? 'var(--me, var(--turq))' : 'none'} stroke="currentColor" stroke-width={on ? 0 : 1.8} stroke-linejoin="round" />
+      {on && <path d="M7.5 12.2l3 3 6-6.4" fill="none" stroke="var(--me-ink, var(--ink))" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />}
+    </svg>
+  );
+}
+
+/** Everything the reader owns, on one page: profile, pins, stamps, saved, fingerprints, submissions, data. */
 export default function MyCorner({ lang, issue, issues, units, stories }: Props) {
   const profileStore = useStore($profile);
   const favsStore = useStore($favorites);
@@ -130,6 +140,11 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
             ))}
           </ul>
         )}
+      </section>
+
+      <section class="my-block" aria-labelledby="my-notes-title" id="my-notes">
+        <h2 id="my-notes-title">{t(lang, 'notes.title')}</h2>
+        <MyNotes lang={lang} />
       </section>
 
       <section class="my-block" aria-labelledby="my-fp">

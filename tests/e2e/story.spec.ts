@@ -3,11 +3,6 @@ import { hydrated } from './helpers';
 
 const MUSAB = '/ar/issue/21/musab-the-message-that-changed-the-path/';
 
-// The first-read nudge (covered in personalization.spec) would open the sheet over these tests.
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('tullabiya:v1:nudged', 'true'));
-});
-
 test('reading to the end marks the section and the home progress line moves', async ({ page }) => {
   await page.goto(MUSAB);
   await expect(page.locator('h1')).toContainText('مصعب');
@@ -15,8 +10,8 @@ test('reading to the end marks the section and the home progress line moves', as
   await page.mouse.wheel(0, 400);
   await expect(page.locator('.read-progress')).toHaveAttribute('aria-valuenow', /9\d|100/);
   await page.goto('/ar/');
-  await hydrated(page, '.favs');
-  await expect(page.locator('.progress strong')).toContainText('1 من 5');
+  await page.locator('section.end').scrollIntoViewIfNeeded();
+  await expect(page.locator('section.end')).toContainText('1 من 5');
 });
 
 test('selecting a sentence offers a share card; without Web Share it downloads a PNG', async ({ page }) => {

@@ -83,5 +83,4 @@ and the hunt's closing state.
 - **Since your last visit**: one line in the hero after a real break (`LocalApi.visit`).
 - **Stamps** (`src/lib/stamps.ts`): first vote, first solve, five follows, both languages, digest done,
   three issues in a row; a toast announces one, My Corner lists them.
-- **The sheet opens by itself once**, after the first story is read, when there is no profile.
 - The calendar page says ViBook integration is coming (`cal.vibook`).

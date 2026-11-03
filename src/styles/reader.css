@@ -1,0 +1,920 @@
+/* The digital reader: the printed magazine, full screen, with its own controls. Designed at 390 first.
+   Quiet on purpose: the magazine's pages are the color on screen. Physical left and right appear nowhere;
+   transforms carry the movement. */
+
+/* ---------- the stage, shared with the archive page's viewer ---------- */
+.viewer-stage {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  padding: 0;
+  touch-action: pan-y pinch-zoom;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.viewer-track {
+  position: relative;
+}
+.viewer-panel {
+  inline-size: 100%;
+}
+.viewer-panel[data-at='prev'],
+.viewer-panel[data-at='next'] {
+  position: absolute;
+  inset-block-start: 0;
+}
+/* Forward lies at the inline end of the track, whichever way the interface reads. */
+.viewer-panel[data-at='next'] {
+  inset-inline-start: 100%;
+}
+.viewer-panel[data-at='prev'] {
+  inset-inline-end: 100%;
+}
+.viewer-panel > img {
+  inline-size: min(100%, 760px);
+  margin-inline: auto;
+  background: var(--white);
+}
+
+/* ---------- the app takes the screen ---------- */
+:root[data-reader-app] {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+:root[data-reader-app] body {
+  overflow: hidden;
+}
+:root[data-reader-app] .rd-plain {
+  display: none;
+}
+.rd-app {
+  --rd-top: calc(56px + env(safe-area-inset-top));
+  --rd-bottom: calc(62px + env(safe-area-inset-bottom));
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--bg);
+  color: var(--fg);
+}
+.rd-app .viewer-stage {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  container-type: size;
+  cursor: grab;
+}
+.rd-app .viewer-stage[data-dragging='true'] {
+  cursor: grabbing;
+}
+.rd-app .viewer-track,
+.rd-app .viewer-panel {
+  block-size: 100%;
+}
+/* Fixed tracks: content larger than the panel overflows equally on every side and stays centered. An auto
+   track would grow from its start edge, and every center-origin transform would land in the wrong place. */
+.rd-app .viewer-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  place-items: center;
+}
+/* The page fits between the bars; on a phone the width decides, so it runs edge to edge. */
+.rd-app .viewer-sheet {
+  position: relative;
+  inline-size: min(100cqw, calc((100cqh - var(--rd-top) - var(--rd-bottom)) * 0.7072));
+  transform-origin: center;
+}
+.rd-app .viewer-sheet[data-wide='true'] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  inline-size: min(100cqw, calc((100cqh - var(--rd-top) - var(--rd-bottom)) * 1.4144));
+}
+.viewer-page {
+  position: relative;
+  background: var(--white);
+}
+.viewer-page {
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+.viewer-page[data-slot] {
+  background-color: transparent;
+}
+.viewer-page[data-slot='start'] {
+  grid-column: 1;
+}
+.viewer-page[data-slot='end'] {
+  grid-column: 2;
+}
+.viewer-page img {
+  inline-size: 100%;
+}
+.rd-app .viewer-stage[data-zoomed='true'] {
+  cursor: grab;
+}
+.rd-app .viewer-stage[data-marking='true'] {
+  cursor: crosshair;
+}
+
+/* ---------- what sits on a page ---------- */
+.page-photo {
+  position: absolute;
+  display: block;
+  padding: 0;
+  cursor: zoom-in;
+}
+.page-mark {
+  position: absolute;
+  display: block;
+  padding: 0;
+  background: color-mix(in oklab, var(--yellow) 72%, transparent);
+  mix-blend-mode: multiply;
+  cursor: pointer;
+}
+.page-draft {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ---------- the bars ---------- */
+.rd-top,
+.rd-bottom {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  transition:
+    transform var(--t-ui) var(--ease-out),
+    opacity var(--t-ui) var(--ease-out),
+    visibility 0s;
+}
+.rd-top {
+  inset-block-start: 0;
+  gap: 2px;
+  min-block-size: var(--rd-top);
+  padding-block-start: env(safe-area-inset-top);
+  padding-inline: calc(4px + env(safe-area-inset-left)) calc(4px + env(safe-area-inset-right));
+}
+.rd-bottom {
+  inset-block-end: 0;
+  justify-content: space-between;
+  min-block-size: var(--rd-bottom);
+  padding-block-end: env(safe-area-inset-bottom);
+  padding-inline: calc(2px + env(safe-area-inset-left)) calc(2px + env(safe-area-inset-right));
+}
+.rd-app[data-bars='off'] .rd-top {
+  transform: translateY(-110%);
+}
+.rd-app[data-bars='off'] .rd-bottom {
+  transform: translateY(110%);
+}
+.rd-app[data-bars='off'] .rd-top,
+.rd-app[data-bars='off'] .rd-bottom {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform var(--t-ui) var(--ease-out),
+    opacity var(--t-ui) var(--ease-out),
+    visibility 0s var(--t-ui);
+}
+.rd-title {
+  flex: 1;
+  min-inline-size: 0;
+  padding-inline: 4px;
+  line-height: 1.3;
+}
+.rd-title h1 {
+  font-size: var(--text-md);
+  font-weight: 900;
+  line-height: 1.2;
+}
+.rd-title p {
+  font-size: 0.8125rem;
+  color: var(--fg2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-inline-size: none;
+}
+.rd-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--tap);
+  min-block-size: var(--tap);
+  font-size: 1.625rem;
+  line-height: 1;
+  color: inherit;
+  text-decoration: none;
+  transition: transform var(--t-press) var(--ease-out);
+}
+.rd-btn:active,
+.rd-tool:active {
+  transform: scale(0.94);
+}
+.rd-btn[disabled] {
+  opacity: 0.35;
+  cursor: default;
+}
+.rd-tool {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-block-size: 52px;
+  padding-inline: 1px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  transition: transform var(--t-press) var(--ease-out);
+}
+.rd-tool span {
+  white-space: nowrap;
+}
+.rd-tool[aria-pressed='true'] {
+  background: var(--action);
+  color: var(--action-fg);
+}
+.flip {
+  transform: scaleX(-1);
+}
+.rd-gap {
+  flex: 1;
+}
+.rd-hint,
+.rd-continue {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  inset-block-end: calc(var(--rd-bottom) + 8px);
+  max-inline-size: none;
+  text-align: center;
+  font-size: var(--text-sm);
+  pointer-events: none;
+}
+.rd-hint {
+  inset-block-end: auto;
+  inset-block-start: calc(var(--rd-top) + 8px);
+}
+.rd-continue a,
+.rd-hint {
+  pointer-events: auto;
+}
+.rd-continue a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  padding-inline: 14px;
+  background: var(--bg);
+  color: var(--fg);
+}
+.rd-hint {
+  font-weight: 700;
+  width: fit-content;
+  margin-inline: auto;
+  padding: 4px 12px;
+  background: var(--bg);
+  pointer-events: none;
+}
+.rd-app[data-bars='off'] .rd-continue {
+  display: none;
+}
+
+/* ---------- sheets ---------- */
+.rd-sheet {
+  inline-size: 100%;
+  max-inline-size: 640px;
+  max-block-size: 82dvh;
+  margin-block: auto 0;
+  margin-inline: auto;
+  padding: 0 18px calc(20px + env(safe-area-inset-bottom));
+  border: 0;
+  background: var(--bg);
+  color: var(--fg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.rd-sheet[open] {
+  animation: rd-sheet-in var(--t-sheet) var(--ease-drawer);
+}
+.rd-sheet::backdrop {
+  background: color-mix(in oklab, var(--ink) 55%, transparent);
+}
+@keyframes rd-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+.rd-sheet-head {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg);
+  padding-block: 8px;
+}
+.rd-sheet-head h2 {
+  font-size: var(--h3);
+  font-weight: 900;
+}
+.rd-sheet ul {
+  list-style: none;
+  padding: 0;
+}
+.rd-sheet h3 {
+  font-size: var(--text-md);
+  font-weight: 900;
+  line-height: 1.3;
+}
+.rd-sec,
+.rd-here {
+  margin-block-end: 18px;
+}
+.rd-sec h3 {
+  border-block-end: 3px solid var(--fg);
+  padding-block-end: 4px;
+}
+.rd-sec[data-here='true'] h3 {
+  border-block-end-color: var(--action);
+  color: var(--action);
+}
+:root[data-theme='dark'] .rd-sec[data-here='true'] h3 {
+  color: var(--fg);
+}
+.rd-here {
+  background: var(--bg2);
+  padding: 10px 12px;
+}
+.rd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-block-end: 2px solid var(--bg2);
+}
+.rd-here .rd-row {
+  border-block-end-color: var(--quiet);
+}
+.rd-here .rd-row:last-child {
+  border-block-end: 0;
+}
+.rd-row[data-current='true'] {
+  background: var(--bg2);
+  margin-inline: -8px;
+  padding-inline: 8px;
+}
+.rd-row-title {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-block-size: var(--tap);
+  padding-block: 6px;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+.rd-row-title small {
+  flex: none;
+  color: var(--fg2);
+  font-variant-numeric: tabular-nums;
+}
+.rd-web {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  font-size: 0.8125rem;
+}
+.rd-thumbs {
+  display: grid;
+  gap: 14px;
+}
+.rd-thumb-group h3 {
+  margin-block-end: 6px;
+}
+.rd-thumb-group ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rd-thumb {
+  position: relative;
+  display: block;
+  padding: 3px;
+  background: var(--bg2);
+}
+.rd-thumb[aria-current='true'] {
+  background: var(--action);
+}
+.rd-thumb img {
+  inline-size: 92px;
+  block-size: 130px;
+  object-fit: cover;
+  background: var(--quiet);
+}
+.rd-thumb span {
+  position: absolute;
+  inset-block-end: 6px;
+  inset-inline-end: 6px;
+  padding-inline: 5px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.rd-jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-block-end: 14px;
+}
+.rd-jump label {
+  font-weight: 700;
+}
+.rd-jump .field {
+  inline-size: 84px;
+  min-block-size: var(--tap);
+  padding-inline: 10px;
+  font-size: var(--text-md);
+}
+.rd-more a {
+  display: flex;
+  align-items: center;
+  min-block-size: 48px;
+  border-block-end: 2px solid var(--bg2);
+  font-weight: 500;
+  text-decoration: none;
+}
+.rd-more-lang .tool {
+  justify-content: flex-start;
+  padding-inline: 0;
+}
+.rd-empty,
+.rd-private,
+.note-private {
+  color: var(--fg2);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.rd-private {
+  margin-block-end: 8px;
+}
+.rd-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: var(--tap);
+  padding-block: 8px;
+  text-align: start;
+  border-block-end: 2px solid var(--bg2);
+}
+.rd-note > span:last-child {
+  flex: 1;
+  min-inline-size: 0;
+  display: grid;
+  gap: 2px;
+}
+.rd-note small {
+  color: var(--fg2);
+}
+.rd-note b {
+  overflow-wrap: anywhere;
+}
+.mark-crop {
+  display: block;
+  flex: none;
+  inline-size: 40%;
+  max-block-size: 120px;
+  background-color: var(--white);
+}
+.note-sheet .mark-crop {
+  inline-size: 100%;
+  max-inline-size: 420px;
+  max-block-size: 180px;
+  margin-block-end: 12px;
+}
+.note-sheet {
+  display: none;
+}
+.note-sheet[open] {
+  display: block;
+}
+.note-label {
+  display: block;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  margin-block-end: 4px;
+}
+.note-field {
+  display: block;
+  inline-size: 100%;
+  padding: 10px 14px;
+  font-size: var(--text-md);
+  line-height: 1.5;
+  resize: vertical;
+}
+.note-private {
+  margin-block: 8px 12px;
+}
+.note-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+.note-send {
+  margin-block-start: 4px;
+  font-size: var(--text-sm);
+}
+.note-sent {
+  margin-block-start: 8px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+/* ---------- a photo from the page, full screen ---------- */
+.photo-viewer {
+  inline-size: 100vw;
+  block-size: 100dvh;
+  max-inline-size: none;
+  max-block-size: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  overflow: hidden;
+}
+.photo-viewer::backdrop {
+  background: transparent;
+}
+.rd-app .photo-stage {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  container-type: normal;
+  cursor: default;
+}
+.photo-stage .photo-box {
+  cursor: zoom-in;
+}
+.photo-stage[data-zoomed='true'] .photo-box {
+  cursor: grab;
+}
+.rd-app .photo-stage[data-zoomed='true'] {
+  cursor: grab;
+}
+.rd-app .photo-stage[data-dragging='true'] {
+  cursor: grabbing;
+}
+.photo-fly,
+.rd-app .photo-stage .viewer-track,
+.rd-app .photo-stage .viewer-panel {
+  block-size: 100%;
+}
+.rd-app .photo-stage .viewer-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  place-items: center;
+}
+/* Sized to the photo's true proportions by the viewer: never stretched to fill. */
+.rd-app .photo-stage .viewer-sheet {
+  position: relative;
+  max-inline-size: none;
+  transform-origin: center;
+}
+/* No backdrop: the page stays in view behind the photo, which a solid frame sets apart from it. */
+.photo-box {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--bg);
+  outline: 5px solid var(--bg);
+}
+.photo-img {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.photo-img[data-loaded='true'] {
+  opacity: 1;
+}
+.photo-img[style*='rotate'] {
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+}
+.photo-top {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 0;
+  inset-inline: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-block: calc(4px + env(safe-area-inset-top)) 4px;
+  padding-inline: 6px;
+  pointer-events: none;
+}
+.photo-top > * {
+  pointer-events: auto;
+}
+.photo-top .rd-gap {
+  pointer-events: none;
+}
+.photo-count {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  padding-inline: 12px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.photo-more {
+  position: absolute;
+  z-index: 2;
+  inset-block-end: calc(8px + env(safe-area-inset-bottom));
+  inset-inline-start: 8px;
+  max-inline-size: min(420px, calc(100vw - 16px));
+  padding-inline: 14px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.photo-more summary {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  cursor: pointer;
+  font-weight: 700;
+}
+.photo-more[open] {
+  padding-block-end: 8px;
+}
+.photo-more ul {
+  list-style: none;
+  padding: 0;
+  max-block-size: 40dvh;
+  overflow-y: auto;
+}
+.photo-more button {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  color: var(--fg);
+}
+.photo-viewer .rd-btn {
+  background: var(--bg);
+  color: var(--fg);
+}
+.photo-viewer .rd-btn[disabled] {
+  opacity: 1;
+  color: var(--fg2);
+}
+
+/* ---------- the plain page, without JavaScript or without the issue's files ---------- */
+.rd-plain {
+  padding: 24px var(--gutter) var(--gap-sm);
+  max-inline-size: 760px;
+}
+.rd-plain h1,
+.rd-plain h2 {
+  font-size: var(--h2);
+  margin-block: 8px;
+}
+.rd-plain a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+}
+.rd-plain-line {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--h3);
+}
+.rd-plain-pages,
+.rd-plain-links {
+  list-style: none;
+  padding: 0;
+  margin-block-start: 12px;
+}
+.rd-plain-pages ul {
+  list-style: none;
+  padding-inline-start: 16px;
+}
+.rd-remote {
+  display: grid;
+  gap: 16px;
+  margin-block-start: 16px;
+}
+.rd-remote .btn {
+  margin-block-start: 10px;
+}
+.rd-fp {
+  aspect-ratio: 3 / 4;
+  max-inline-size: 220px;
+  background: var(--bg2);
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 16px;
+}
+.rd-fp i {
+  flex: 1;
+  display: block;
+  background: var(--fg);
+  transform: skewX(-5deg);
+}
+
+/* ---------- back to the whole page ---------- */
+.rd-whole {
+  position: absolute;
+  z-index: 3;
+  inset-inline: 0;
+  inset-block-end: calc(var(--rd-bottom) + 8px);
+  inline-size: fit-content;
+  margin-inline: auto;
+  min-block-size: var(--tap);
+  padding-inline: 16px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.rd-app[data-bars='off'] .rd-whole {
+  inset-block-end: calc(8px + env(safe-area-inset-bottom));
+}
+
+/* ---------- a laptop: a rail on the side the language starts from, the outline docked beside it ---------- */
+.rd-app[data-layout='wide'] {
+  --rd-top: 0px;
+  --rd-bottom: 0px;
+  --rd-rail: 76px;
+  --rd-dock: 340px;
+}
+.rd-app[data-layout='wide'] .viewer-stage:not(.photo-stage) {
+  inset-inline-start: var(--rd-rail);
+}
+.rd-app[data-layout='wide'][data-panel='open'] .viewer-stage:not(.photo-stage) {
+  inset-inline-start: calc(var(--rd-rail) + var(--rd-dock));
+}
+.rd-rail {
+  position: absolute;
+  z-index: 2;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--rd-rail);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-block: 6px;
+  background: var(--bg);
+  border-inline-end: 3px solid var(--bg2);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.rd-rail-title {
+  flex: none;
+  padding-inline: 2px;
+  text-align: center;
+}
+.rd-rail-title h1 {
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+.rd-rail-title p {
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  white-space: normal;
+}
+.rd-rail-tools,
+.rd-rail-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  inline-size: 100%;
+}
+.rd-rail-tools {
+  margin-block-start: 8px;
+}
+.rd-rail .rd-tool {
+  flex: none;
+  inline-size: 100%;
+  min-block-size: 54px;
+}
+.rd-rail .rd-gap {
+  flex: 1;
+  min-block-size: 4px;
+}
+.rd-tool[aria-expanded='true'] {
+  background: var(--bg2);
+}
+.rd-dock {
+  position: absolute;
+  z-index: 2;
+  inset-block: 0;
+  inset-inline-start: var(--rd-rail);
+  inline-size: var(--rd-dock);
+  padding: 0 16px 20px;
+  background: var(--bg);
+  border-inline-end: 3px solid var(--bg2);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.rd-dock ul {
+  list-style: none;
+  padding: 0;
+}
+.rd-dock h3 {
+  font-size: var(--text-md);
+  font-weight: 900;
+  line-height: 1.3;
+}
+.rd-dock .rd-sec h3 a,
+.rd-sheet .rd-sec h3 a {
+  display: flex;
+  align-items: center;
+  min-block-size: 40px;
+  text-decoration: none;
+}
+.rd-dock .rd-thumb img {
+  inline-size: 78px;
+  block-size: 110px;
+}
+.rd-dock .mark-crop {
+  inline-size: 50%;
+}
+.rd-app[data-layout='wide'] .rd-continue,
+.rd-app[data-layout='wide'] .rd-whole,
+.rd-app[data-layout='wide'] .rd-hint {
+  inset-inline-start: var(--rd-rail);
+}
+.rd-app[data-layout='wide'][data-panel='open'] .rd-continue,
+.rd-app[data-layout='wide'][data-panel='open'] .rd-whole,
+.rd-app[data-layout='wide'][data-panel='open'] .rd-hint {
+  inset-inline-start: calc(var(--rd-rail) + var(--rd-dock));
+}
+.page-photo:hover {
+  cursor: zoom-in;
+}
+@media (hover: hover) and (pointer: fine) {
+  .rd-btn:not([disabled]):hover,
+  .rd-tool:hover {
+    background: var(--bg2);
+  }
+  .rd-tool[aria-pressed='true']:hover {
+    background: var(--action);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rd-top,
+  .rd-bottom,
+  .rd-app[data-bars='off'] .rd-top,
+  .rd-app[data-bars='off'] .rd-bottom,
+  .rd-btn,
+  .rd-tool {
+    transition: none;
+  }
+  .rd-sheet[open] {
+    animation: none;
+  }
+  .photo-img {
+    transition: none;
+  }
+  .rd-btn:active,
+  .rd-tool:active {
+    transform: none;
+  }
+}

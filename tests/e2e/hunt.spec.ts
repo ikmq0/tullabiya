@@ -4,6 +4,7 @@ async function ready(page: Page, query = '') {
   await page.goto(`/ar/${query}#hunt`);
   await page.locator('#hunt').scrollIntoViewIfNeeded();
   await page.locator('.hunt astro-island:not([ssr])').first().waitFor({ state: 'attached' });
+  await page.locator('.hunt-more summary').click();
   await expect(page.locator('.hunt-stats')).toBeVisible();
 }
 
@@ -36,6 +37,19 @@ test('after the closing date the form is replaced by a closed message', async ({
   await ready(page, '?now=2026-09-21');
   await expect(page.locator('#hunt-answer')).toHaveCount(0);
   await expect(page.locator('.hunt-msg')).toContainText('أُغلق');
+});
+
+test('the riddle and answer box show first; clues, seats and prize wait behind a tap', async ({ page }) => {
+  await page.goto('/ar/#hunt');
+  await page.locator('.hunt astro-island:not([ssr])').first().waitFor({ state: 'attached' });
+  await expect(page.locator('.hunt .riddle')).toBeVisible();
+  await expect(page.locator('#hunt-answer')).toBeVisible();
+  await expect(page.locator('.hunt-stats')).toBeHidden();
+  await expect(page.locator('.hunt-prog')).toBeHidden();
+  await expect(page.locator('.hunt-foot')).toBeHidden();
+  await page.locator('.hunt-more summary').click();
+  await expect(page.locator('.hunt-stats')).toBeVisible();
+  await expect(page.locator('.hunt-foot')).toBeVisible();
 });
 
 test('an empty answer costs nothing', async ({ page }) => {

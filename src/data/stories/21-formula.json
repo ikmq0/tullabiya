@@ -14,5 +14,6 @@
   "photo": "formula-team",
   "photoAlt": { "ar": "فريق الجامعة يرفع علم KFUPM في حلبة سيلفرستون", "en": "The university team raising the KFUPM flag at Silverstone", "enStatus": "machine" },
   "pdfPage": 3,
+  "pdfRegion": { "x": 0.045, "y": 0.795, "w": 0.91, "h": 0.125 },
   "readingMinutes": 1
 }
