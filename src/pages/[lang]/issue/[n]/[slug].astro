@@ -10,6 +10,7 @@ import ShareQuote from '~/components/islands/ShareQuote';
 import ReadingProgress from '~/components/islands/ReadingProgress';
 import SaveStory from '~/components/islands/SaveStory';
 import Onboarding from '~/components/islands/Onboarding';
+import LiteVideo from '~/components/islands/LiteVideo';
 import { loadAll, personById, storiesOf, unitById } from '~/data';
 import { L, localized, t, tp } from '~/i18n';
 import { actionsFor } from '~/lib/entities';
@@ -39,7 +40,7 @@ const chip = author
   : { kind: 'unit' as const, id: unit.id, name: L(unit.name, lang), sub: undefined, actions: actionsFor({ kind: 'unit', id: unit.id }, bundle, title.text) };
 const more = storiesOf(story.issue).filter((s) => s.section === story.section && s.id !== story.id).slice(0, 3);
 const coverImg = await getImage({ src: photo(issue.coverPhoto), width: 1080, format: 'jpg' });
-const printed = `/archive/${story.issue}/p${String(story.pdfPage).padStart(2, '0')}.jpg`;
+const printed = story.pdfPage ? `/archive/${story.issue}/p${String(story.pdfPage).padStart(2, '0')}.jpg` : null;
 const pageTitle = `${title.text} | ${t(lang, 'site.name')}`;
 const isList = story.body?.ar.every((p) => /^\d+\. /.test(p));
 ---
@@ -61,7 +62,12 @@ const isList = story.body?.ar.every((p) => /^\d+\. /.test(p));
         </div>
       </header>
 
-      {hasPhoto(story.photo) && (
+      {story.video && (
+        <figure class="story-photo story-video">
+          <LiteVideo client:load lang={lang} id={story.video.youtube} title={title.text} minutes={story.video.minutes} />
+        </figure>
+      )}
+      {!story.video && hasPhoto(story.photo) && (
         <figure class="story-photo fast-photo">
           <Image src={photo(story.photo)} alt={L(story.photoAlt ?? story.title, lang)} widths={[720, 1200]} sizes="(max-width: 1023px) 100vw, 900px" loading="eager" />
           {story.photoCredit && <figcaption>{L(story.photoCredit, lang)}</figcaption>}
@@ -104,10 +110,10 @@ const isList = story.body?.ar.every((p) => /^\d+\. /.test(p));
       <div class="story-end" aria-hidden="true"></div>
     </article>
 
-    <section class="printed" aria-labelledby="printed-title">
+    {printed && <section class="printed" aria-labelledby="printed-title">
       <h2 id="printed-title">{t(lang, 'story.printed')}</h2>
       <img src={printed} alt={t(lang, 'story.printedAlt', { n: story.pdfPage })} width={918} height={1298} loading="lazy" />
-    </section>
+    </section>}
 
     {more.length > 0 && (
       <section class="more" aria-labelledby="more-title">

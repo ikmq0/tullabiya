@@ -61,8 +61,10 @@ export const storySchema = z.object({
   photos: z.array(z.string()).optional(),
   photoAlt: localized.optional(),
   photoCredit: localized.optional(),
-  pdfPage: z.number().int().positive(),
+  /** Page in the printed issue; absent for web-only stories such as videos. */
+  pdfPage: z.number().int().positive().optional(),
   readingMinutes: z.number().int().positive(),
+  video: z.object({ youtube: z.string().regex(/^[\w-]{11}$/), minutes: z.number().int().positive().optional() }).optional(),
   steps: z.array(z.object({ label: localized, when: localized, note: localized })).optional(),
   quote: localized.optional(),
 });

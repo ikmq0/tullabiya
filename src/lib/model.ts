@@ -165,8 +165,10 @@ export interface Story {
   photos?: string[];
   photoAlt?: Localized;
   photoCredit?: Localized;
-  pdfPage: number;
+  pdfPage?: number;
   readingMinutes: number;
+  /** A YouTube video in place of the photo. */
+  video?: { youtube: string; minutes?: number };
   steps?: StoryStep[];
   quote?: Localized;
 }

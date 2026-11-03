@@ -1839,3 +1839,48 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
     background: color-mix(in oklab, var(--bg) 85%, var(--me, var(--turq)));
   }
 }
+
+/* ---------- video: poster first, player on tap ---------- */
+.video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--ink);
+  --slant: 40px;
+}
+.video img,
+.video iframe {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  border: 0;
+}
+.video .play {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-lg);
+  padding-block: 0.45em;
+  transition: transform var(--t-press) var(--ease-out), background-color 150ms ease;
+}
+.video .play:active {
+  transform: scale(0.97);
+}
+.video.is-playing {
+  clip-path: none;
+}
+.side-story .video {
+  margin-block-end: 18px;
+}
+.story-video {
+  margin-block-end: 28px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .video .play:hover {
+    background: color-mix(in oklab, var(--yellow) 88%, var(--paper));
+  }
+}

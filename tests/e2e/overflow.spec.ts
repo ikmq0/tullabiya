@@ -30,7 +30,9 @@ for (const lang of ['ar', 'en'] as const) {
         for (const el of document.querySelectorAll('body *')) {
           if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
           const cs = getComputedStyle(el);
-          if (cs.position === 'fixed' || cs.display === 'none' || cs.display === 'contents') continue;
+          // Closed popovers are visibility:hidden and sit beside their trigger; they cannot be scrolled to
+          // (body clips the x axis) and the viewport-width assertion below proves they do not widen the page.
+          if (cs.position === 'fixed' || cs.display === 'none' || cs.display === 'contents' || cs.visibility === 'hidden') continue;
           const b = el.getBoundingClientRect();
           if (b.width === 0) continue;
           if ((b.right > off + cw + 1 || b.left < off - 1) && !contained(el)) {

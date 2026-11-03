@@ -1,0 +1,27 @@
+{
+  "id": "21-research-day",
+  "issue": 21,
+  "section": "news",
+  "slug": "research-day",
+  "title": { "ar": "يوم الأبحاث الجامعي: الطلاب يعرضون ما صنعوه", "en": "University Research Day: students show what they built", "enStatus": "machine" },
+  "summary": {
+    "ar": "في ثلاث دقائق: ملصقات، نماذج أولية، وأسئلة لجنة التحكيم. جولة مصوّرة في يوم الأبحاث الجامعي.",
+    "en": "In three minutes: posters, prototypes and the jury's questions. A filmed walk through University Research Day.",
+    "enStatus": "machine"
+  },
+  "body": {
+    "ar": [
+      "نص تجريبي يُستبدل قبل النشر. امتلأت قاعة المعارض بالملصقات والنماذج الأولية، ووقف الطلاب أمام مشاريعهم يجيبون عن أسئلة الزوار ولجنة التحكيم. الفيديو أعلاه جولة في ثلاث دقائق بين أركان يوم الأبحاث الجامعي.",
+      "تنوّعت المشاريع بين تطبيقات، وأجهزة، ودراسات ميدانية، وكان القاسم المشترك سؤالاً واحداً: ما المشكلة التي يحلّها هذا العمل؟ الفرق التي أجابت بوضوح نالت أطول وقفات الزوار.",
+      "إن كان لديك فكرة بحثية، فباب المشاركة في الدورة القادمة يُفتح مع بداية الفصل. تابع عمادة شؤون الطلاب ليصلك الإعلان أولاً."
+    ],
+    "en": [
+      "Sample text, to be replaced before publication. The exhibition hall filled with posters and prototypes, and students stood by their projects answering visitors and the jury. The video above is a three-minute walk through University Research Day.",
+      "The projects ranged from apps to devices to field studies, with one question in common: what problem does this work solve? The teams that answered clearly drew the longest stops.",
+      "If you have a research idea, applications for the next round open at the start of the term. Follow the Deanship of Student Affairs to get the announcement first."
+    ]
+  },
+  "unitIds": ["dsa"],
+  "video": { "youtube": "OYayy3Z4qls", "minutes": 3 },
+  "readingMinutes": 3
+}

@@ -34,7 +34,10 @@ const issue = currentIssue();
 const events = eventsInMonth(issue.year, issue.month);
 const stories = storiesOf(issue.number);
 const lead = stories.find((s) => s.id === issue.leadStoryId)!;
-const newsSide = stories.filter((s) => s.section === 'news' && s.id !== lead.id).slice(0, 2);
+const newsSide = stories
+  .filter((s) => s.section === 'news' && s.id !== lead.id)
+  .sort((a, b) => Number(!!b.video) - Number(!!a.video))
+  .slice(0, 3);
 const big = stories.find((s) => s.section === 'experience')!;
 const voicesSide = stories.filter((s) => s.section === 'contributions' && s.authorId && s.id !== '21-letter').slice(0, 2);
 const guest = personById(issue.guestId);

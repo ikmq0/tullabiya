@@ -43,7 +43,10 @@
 [dir='rtl'] .popover.up {
   transform-origin: bottom right;
 }
+/* Closed: display none, so a popover never widens the page on a phone; the exit still plays
+   through `display ... allow-discrete`, and @starting-style gives the entrance its first frame. */
 .popover[data-open='false'] {
+  display: none;
   opacity: 0;
   transform: scale(0.95) translateY(-4px);
   visibility: hidden;
@@ -51,10 +54,20 @@
   transition:
     opacity 120ms var(--ease-out),
     transform 120ms var(--ease-out),
-    visibility 0s linear 120ms;
+    visibility 0s linear 120ms,
+    display 120ms allow-discrete;
 }
 .popover.up[data-open='false'] {
   transform: scale(0.95) translateY(4px);
+}
+@starting-style {
+  .popover[data-open='true'] {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  .popover.up[data-open='true'] {
+    transform: scale(0.95) translateY(4px);
+  }
 }
 .pop-head {
   padding: 10px 12px 6px;

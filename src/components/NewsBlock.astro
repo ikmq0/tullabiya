@@ -5,6 +5,7 @@ import { L, t } from '~/i18n';
 import { photo, hasPhoto } from '~/lib/photos';
 import { actionsFor } from '~/lib/entities';
 import { loadAll, unitById } from '~/data';
+import LiteVideo from '~/components/islands/LiteVideo';
 import type { Lang, Story } from '~/lib/model';
 
 interface Props {
@@ -57,7 +58,8 @@ const leadPhotos = (lead.photos ?? [lead.photo]).filter(hasPhoto).slice(0, 3);
           return (
             <article class="side-story" data-fy data-units={s.unitIds.join(',')} data-section={s.section}>
               <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
-              {hasPhoto(s.photo) && <Image src={photo(s.photo)} alt={L(s.photoAlt ?? s.title, lang)} widths={[480, 800]} sizes="(max-width: 1023px) 100vw, 30vw" loading="lazy" />}
+              {s.video && <LiteVideo client:visible lang={lang} id={s.video.youtube} title={L(s.title, lang)} minutes={s.video.minutes} />}
+              {!s.video && hasPhoto(s.photo) && <Image src={photo(s.photo)} alt={L(s.photoAlt ?? s.title, lang)} widths={[480, 800]} sizes="(max-width: 1023px) 100vw, 30vw" loading="lazy" />}
               <h3><a href={href(s)}>{L(s.title, lang)}</a></h3>
               <p>{L(s.summary, lang)}</p>
               <div class="act-row">
