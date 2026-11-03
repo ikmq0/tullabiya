@@ -64,3 +64,20 @@ export function makeCode(rng: () => number): string {
   for (let i = 0; i < 4; i++) s += CODE_ALPHABET[Math.floor(rng() * CODE_ALPHABET.length)];
   return `KFUPM-${s}`;
 }
+
+const DAY_MS = 86_400_000;
+
+/** Day in Riyadh for a timestamp, as YYYY-MM-DD. */
+function riyadhDay(ms: number): string {
+  return new Date(ms + 3 * 3_600_000).toISOString().slice(0, 10);
+}
+
+/** Weekly clue drops: clue k opens on day 1 + 7(k - 1) of the hunt's month (days 1, 8, 15), so the
+ *  riddle gives three reasons to come back. The first clue is always open. */
+export function cluesOpenOn(monthStartIso: string, nowMs: number, count: number): { open: number; next: string | null } {
+  const start = new Date(`${monthStartIso}T00:00:00+03:00`).getTime();
+  const days = Math.floor((nowMs - start) / DAY_MS);
+  const open = Math.max(1, Math.min(count, 1 + Math.floor(days / 7)));
+  if (open >= count) return { open, next: null };
+  return { open, next: riyadhDay(start + open * 7 * DAY_MS) };
+}

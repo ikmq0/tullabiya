@@ -154,12 +154,22 @@ describe('hunt', () => {
     expect(r.state.takenSeats).toBe(8);
     expect((await api.getProgress(21)).huntAttempted).toBe(true);
   });
-  it('a wrong answer unlocks the next clue; the fifth wrong attempt in an hour is rate-limited', async () => {
+  it('clues drop weekly by date, never by wrong answers', async () => {
+    const at = (d: string) => make(memoryStorage(), () => new Date(`${d}T10:00:00+03:00`).getTime());
+    expect((await at('2026-09-03').getHunt('h')).clueIndex).toBe(1);
+    expect((await at('2026-09-03').getHunt('h')).nextClueAt).toBe('2026-09-08');
+    expect((await at('2026-09-12').getHunt('h')).clueIndex).toBe(2);
+    expect((await at('2026-09-12').getHunt('h')).nextClueAt).toBe('2026-09-15');
+    expect((await at('2026-09-16').getHunt('h')).clueIndex).toBe(3);
+    expect((await at('2026-09-16').getHunt('h')).nextClueAt).toBeNull();
+  });
+  it('a wrong answer keeps the clue count; the fifth wrong attempt in an hour is rate-limited', async () => {
     const api = make();
+    const before = (await api.getHunt('h')).clueIndex;
     const r1 = await api.submitHuntAnswer('h', 'المكتبة');
     expect(r1.ok).toBe(false);
     expect(r1.reason).toBe('wrong');
-    expect(r1.state.clueIndex).toBe(2);
+    expect(r1.state.clueIndex).toBe(before);
     await api.submitHuntAnswer('h', 'x1');
     await api.submitHuntAnswer('h', 'x2');
     const r4 = await api.submitHuntAnswer('h', 'x3');
@@ -179,7 +189,6 @@ describe('hunt', () => {
     const r = await api.submitHuntAnswer('h', '  ');
     expect(r.reason).toBe('empty');
     expect(r.state.attemptsLeft).toBe(4);
-    expect(r.state.clueIndex).toBe(1);
   });
 });
 
@@ -215,5 +224,24 @@ describe('reactions, upvotes, toggles', () => {
     expect(JSON.parse(await api.exportAll()).profile.name).toBe('سعد');
     await api.reset();
     expect(await api.getProfile()).toBeNull();
+  });
+});
+
+describe('visits', () => {
+  it('the first visit has nothing to report; a later one counts the drift and new clues', async () => {
+    const storage = memoryStorage();
+    let wallNow = new Date('2026-09-10T09:00:00+03:00').getTime();
+    let demo = new Date('2026-09-03T09:00:00+03:00').getTime();
+    const api = () => createLocalApi({ storage, now: () => demo, wall: () => wallNow, polls: [smallPoll], hunts: [hunt] });
+    const first = await api().visit(21, 'ar');
+    expect(first.first).toBe(true);
+    wallNow += 2 * 3_600_000;
+    demo = new Date('2026-09-16T09:00:00+03:00').getTime();
+    const later = await api().visit(21, 'en');
+    expect(later.first).toBe(false);
+    expect(later.votesSince).toBe(14);
+    expect(later.newClues).toBe(2);
+    const again = await api().visit(21, 'ar');
+    expect(again.votesSince).toBe(14);
   });
 });

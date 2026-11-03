@@ -10,13 +10,13 @@ test('the edition rail says where you are and how many minutes are left, then re
   await page.mouse.wheel(0, 80);
   await expect(rail).toHaveAttribute('data-section', 'month');
   await expect(rail).toHaveAttribute('data-active', 'true');
-  const atStart = Number(await rail.getAttribute('data-left'));
+  const atStart = Number(await rail.getAttribute('data-remaining'));
   expect(atStart).toBeGreaterThan(10);
   await expect(rail.locator('.rail-label')).toContainText('متبق');
   await page.locator('#hunt').scrollIntoViewIfNeeded();
   await page.mouse.wheel(0, 120);
   await expect(rail).toHaveAttribute('data-section', 'hunt');
-  const atHunt = Number(await rail.getAttribute('data-left'));
+  const atHunt = Number(await rail.getAttribute('data-remaining'));
   expect(atHunt).toBeLessThan(atStart);
   await expect(rail.locator('.rail-notch.past')).toHaveCount(3);
   await page.waitForTimeout(1700);

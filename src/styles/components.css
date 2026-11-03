@@ -1995,3 +1995,19 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
     transition: none;
   }
 }
+
+/* ---------- return hooks ---------- */
+.hero-since {
+  margin-block-start: 14px;
+  padding: 8px 14px;
+  background: color-mix(in oklab, var(--beige) 18%, transparent);
+  color: var(--beige);
+  font-size: var(--text-md);
+  max-inline-size: 44ch;
+  border-inline-start: 4px solid var(--yellow);
+}
+.hunt-next {
+  margin-block: 4px 18px;
+  font-size: var(--text-md);
+  font-weight: 500;
+}

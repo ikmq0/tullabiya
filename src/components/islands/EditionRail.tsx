@@ -21,7 +21,7 @@ const IDLE_MS = 1400;
  *  the section's name and the minutes left (in the issue, and in this section) while you scroll. */
 export default function EditionRail({ lang, sections }: Props) {
   const [idx, setIdx] = useState(-1);
-  const [left, setLeft] = useState(0);
+  const [remaining, setRemaining] = useState(0);
   const [here, setHere] = useState(0);
   const [active, setActive] = useState(false);
   const timer = useRef(0);
@@ -51,7 +51,7 @@ export default function EditionRail({ lang, sections }: Props) {
       const inThis = sections[cur].minutes * (1 - p);
       setIdx(cur);
       setHere(Math.ceil(inThis));
-      setLeft(Math.ceil(rest + inThis));
+      setRemaining(Math.ceil(rest + inThis));
     };
     const onScroll = () => {
       if (!raf.current) raf.current = requestAnimationFrame(measure);
@@ -72,7 +72,7 @@ export default function EditionRail({ lang, sections }: Props) {
 
   const shown = idx >= 0;
   return (
-    <div class="rail" aria-hidden="true" data-active={active && shown ? 'true' : 'false'} data-shown={shown ? 'true' : 'false'} data-section={shown ? sections[idx].id : ''} data-left={shown ? left : ''}>
+    <div class="rail" aria-hidden="true" data-active={active && shown ? 'true' : 'false'} data-shown={shown ? 'true' : 'false'} data-section={shown ? sections[idx].id : ''} data-remaining={shown ? remaining : ''}>
       <div class="rail-notches">
         {sections.map((s, i) => (
           <i key={s.id} class={`rail-notch${i < idx ? ' past' : ''}${i === idx ? ' now' : ''}`} style={{ flexGrow: s.minutes }} />
@@ -82,7 +82,7 @@ export default function EditionRail({ lang, sections }: Props) {
         {shown && (
           <>
             <b>{sections[idx].label}</b>
-            <span>{t(lang, 'rail.left', { n: left, m: here })}</span>
+            <span>{t(lang, 'rail.left', { n: remaining, m: here })}</span>
           </>
         )}
       </div>

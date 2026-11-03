@@ -7,9 +7,11 @@ async function ready(page: Page, query = '') {
   await expect(page.locator('.hunt-stats')).toBeVisible();
 }
 
-test('a wrong answer asks for a retry and unlocks the next clue', async ({ page }) => {
+test('clues drop weekly: two are open on the demo day, the third is announced, a wrong answer unlocks nothing', async ({ page }) => {
   await ready(page);
-  await expect(page.locator('.hunt-prog')).toContainText('1 من 3');
+  await expect(page.locator('.hunt-prog')).toContainText('2 من 3');
+  await expect(page.locator('[data-next-clue]')).toContainText('الدليل 3');
+  await expect(page.locator('[data-next-clue]')).toContainText('15');
   await page.locator('#hunt-answer').fill('المكتبة');
   await page.locator('.answer button').click();
   await expect(page.locator('.hunt-msg')).toContainText('ليست هي');
@@ -40,5 +42,5 @@ test('an empty answer costs nothing', async ({ page }) => {
   await ready(page);
   await page.locator('.answer button').click();
   await expect(page.locator('.hunt-msg')).toContainText('اكتب إجابتك');
-  await expect(page.locator('.hunt-prog')).toContainText('1 من 3');
+  await expect(page.locator('.hunt-prog')).toContainText('2 من 3');
 });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
-import { t, tp } from '~/i18n';
+import { formatDate, t, tp } from '~/i18n';
 import type { Lang } from '~/lib/model';
 import { getApi, type HuntState } from '~/lib/api';
 import { now } from '~/lib/clock';
@@ -78,6 +78,9 @@ export default function HuntBlock({ lang, issue, huntId, month, clues, prize }: 
             </li>
           ))}
         </ul>
+        {state?.nextClueAt && !solved && !state.closed && (
+          <p class="hunt-next" data-next-clue>{t(lang, 'hunt.nextClue', { k: unlocked + 1, date: formatDate(lang, state.nextClueAt) })}</p>
+        )}
         {solved ? (
           <div class="hunt-msg ok" aria-live="polite">
             <p>{t(lang, solved.seat === 'first' ? 'hunt.seat.first' : solved.seat === 'draw' ? 'hunt.seat.draw' : 'hunt.seat.none', { rank: solved.rank ?? '' })}</p>

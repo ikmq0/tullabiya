@@ -1,14 +1,14 @@
 // Simulated backend: one JSON blob in storage plus seeded numbers and live ticks.
 // Replace with an HTTP implementation of Api; the islands never know.
 import type {
-  Api, HuntSolved, HuntState, IssueProgress, PollState, ReactionKind, ReactionState, Submission, SubmissionKind,
+  Api, HuntSolved, HuntState, IssueProgress, PollState, ReactionKind, ReactionState, Submission, SubmissionKind, VisitDelta,
 } from './Api';
 import { readJson, safeStorage, writeJson, type StorageLike } from './storage';
 import { COLLEGE_ACCENT, EMPTY_FAVORITES, KEYS, type CollegeId, type Favorites, type Hunt, type Poll, type Profile } from '~/lib/model';
 import { COMMUNITY, HUNTS, POLLS } from '~/data/interactive';
 import { breakdownVisible, tally } from '~/lib/poll';
 import { emptyProgress } from '~/lib/progress';
-import { makeCode, matchesAnswer } from '~/lib/hunt';
+import { cluesOpenOn, makeCode, matchesAnswer } from '~/lib/hunt';
 import { sanitizeText } from '~/lib/sanitize';
 
 interface HuntUserState {
@@ -31,6 +31,8 @@ interface State {
   registrations: string[];
   reminders: string[];
   saved: string[];
+  /** Snapshot taken at the last visit, by wall-clock time, for "since your last visit". */
+  lastVisit?: { at: number; pollTotals: Record<string, number>; clues: Record<string, number>; langs: string[]; delta: VisitDelta };
 }
 
 export interface LocalApiDeps {
@@ -41,9 +43,12 @@ export interface LocalApiDeps {
   hunts?: Hunt[];
   questions?: { id: string; votes: number }[];
   tickMs?: number;
+  /** Wall-clock time for visit bookkeeping (the demo clock stands still). */
+  wall?: () => number;
 }
 
 const WRONG_LIMIT = 4;
+const SESSION_MS = 30 * 60 * 1000;
 const WINDOW_MS = 60 * 60 * 1000;
 const REACTIONS: ReactionKind[] = ['useful', 'inspiring', 'metoo'];
 
@@ -65,6 +70,7 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
   const hunts = deps.hunts ?? HUNTS;
   const questions = deps.questions ?? COMMUNITY.questions.map((q) => ({ id: q.id, votes: q.votes }));
   const tickMs = deps.tickMs ?? 4000;
+  const wall = deps.wall ?? (() => Date.now());
   // Live-looking increments live only in memory; the seed dominates after reload.
   const sim: Record<string, Record<string, number>> = {};
 
@@ -136,13 +142,15 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
     const t = now();
     const recentWrong = u.attempts.filter((a) => t - a < WINDOW_MS).length;
     const closed = t > new Date(h.closesAt).getTime();
+    const drop = cluesOpenOn(h.closesAt.slice(0, 8) + '01', t, h.clues.length);
     return {
       id,
       closesAt: h.closesAt,
       closed,
       attemptsLeft: Math.max(0, WRONG_LIMIT - recentWrong),
-      clueIndex: Math.min(u.clueIndex, h.clues.length),
+      clueIndex: drop.open,
       clueCount: h.clues.length,
+      nextClueAt: drop.next,
       takenSeats: Math.min(h.firstSeats, h.seedTaken + (u.solved?.seat === 'first' ? 1 : 0)),
       firstSeats: h.firstSeats,
       drawSeats: h.drawSeats,
@@ -271,7 +279,6 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
         return { ok: true, state: huntState(id, s) };
       }
       u.attempts.push(now());
-      u.clueIndex = Math.min(h.clues.length, u.clueIndex + 1);
       mark();
       save(s);
       return { ok: false, reason: 'wrong', state: huntState(id, s) };
@@ -314,6 +321,35 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
       save(s);
       const mine = s.upvotes.includes(id);
       return { count: q.votes + (mine ? 1 : 0), mine };
+    },
+    async visit(issue, lang) {
+      const s = load();
+      const t = wall();
+      const pollTotals: Record<string, number> = {};
+      for (const p of polls.filter((x) => x.issue === issue)) pollTotals[p.id] = pollState(p.id, s).total;
+      const clues: Record<string, number> = {};
+      for (const h of hunts.filter((x) => x.issue === issue)) clues[h.id] = huntState(h.id, s).clueIndex;
+      const prev = s.lastVisit;
+      const langs = Array.from(new Set([...(prev?.langs ?? []), lang]));
+      let delta: VisitDelta;
+      if (!prev) {
+        delta = { first: true, sinceAt: null, votesSince: 0, newClues: 0 };
+        s.lastVisit = { at: t, pollTotals, clues, langs, delta };
+      } else if (t - prev.at <= SESSION_MS) {
+        // Still the same session: the same answer as when it began.
+        delta = prev.delta;
+        s.lastVisit = { ...prev, langs };
+      } else {
+        // Sample growth: this simulation has no other readers, so the pulse gains about seven votes
+        // for every hour the reader was away.
+        const drift = Math.floor(((t - prev.at) / 3_600_000) * 7);
+        const votesSince = Object.keys(pollTotals).reduce((a, id) => a + Math.max(0, pollTotals[id] - (prev.pollTotals[id] ?? pollTotals[id])), 0) + drift;
+        const newClues = Object.keys(clues).reduce((a, id) => a + Math.max(0, clues[id] - (prev.clues[id] ?? clues[id])), 0);
+        delta = { first: false, sinceAt: new Date(prev.at).toISOString(), votesSince, newClues };
+        s.lastVisit = { at: t, pollTotals, clues, langs, delta };
+      }
+      save(s);
+      return delta;
     },
     async getRegistrations() {
       return [...load().registrations];

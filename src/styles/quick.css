@@ -31,7 +31,7 @@
 [dir='ltr'] .quick-line {
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
 }
-.quick-line[data-done='true'][data-left='0'] {
+.quick-line[data-done='true'][data-remaining='0'] {
   background: var(--green);
   color: var(--white);
 }

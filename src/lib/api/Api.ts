@@ -33,14 +33,23 @@ export interface HuntSolved {
   at: string;
 }
 
+export interface VisitDelta {
+  first: boolean;
+  sinceAt: string | null;
+  votesSince: number;
+  newClues: number;
+}
+
 export interface HuntState {
   id: string;
   closesAt: string;
   closed: boolean;
   attemptsLeft: number;
-  /** 1-based count of clues the reader has unlocked. */
+  /** 1-based count of clues open so far; they drop weekly. */
   clueIndex: number;
   clueCount: number;
+  /** Day the next clue opens, or null when all are open. */
+  nextClueAt: string | null;
   takenSeats: number;
   firstSeats: number;
   drawSeats: number;
@@ -89,6 +98,8 @@ export interface Api {
   submitUserContent(kind: SubmissionKind, text: string, ref?: string): Promise<Submission>;
   listMySubmissions(): Promise<Submission[]>;
   upvoteQuestion(id: string): Promise<{ count: number; mine: boolean }>;
+  /** Records a visit and says what changed since the previous one. */
+  visit(issue: number, lang: string): Promise<VisitDelta>;
   getRegistrations(): Promise<string[]>;
   toggleRegistration(eventId: string): Promise<string[]>;
   getReminders(): Promise<string[]>;

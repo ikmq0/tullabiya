@@ -1,6 +1,6 @@
 // Shared reader state for the islands: profile, pins, progress. Hydrated once from the Api.
 import { atom } from 'nanostores';
-import { getApi, type IssueProgress } from '~/lib/api';
+import { getApi, type IssueProgress, type VisitDelta } from '~/lib/api';
 import { accent, EMPTY_FAVORITES, KEYS, type Favorites, type Profile, type SectionId } from '~/lib/model';
 import { readJson, safeStorage, writeJson } from '~/lib/api/storage';
 
@@ -8,6 +8,8 @@ export const $profile = atom<Profile | null>(null);
 export const $favorites = atom<Favorites>(EMPTY_FAVORITES);
 export const $progress = atom<IssueProgress | null>(null);
 export const $ready = atom(false);
+/** What changed since the reader's previous visit; null until known. */
+export const $visit = atom<VisitDelta | null>(null);
 /** Which sheet is open, shared across islands. */
 export const $sheet = atom<'onboarding' | null>(null);
 /** "My favorites only": lists narrow to followed publishers and pinned sections. Persisted. */
@@ -66,6 +68,7 @@ export function hydrate(issue: number): Promise<void> {
     $progress.set(pr);
     $forYou.set(readJson(safeStorage(), FORYOU, false));
     $ready.set(true);
+    if (typeof document !== 'undefined') $visit.set(await api.visit(issue, document.documentElement.lang || 'ar'));
   })();
   return hydrating;
 }

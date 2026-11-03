@@ -17,7 +17,7 @@ test('reaching the end records the digest and the line turns', async ({ page }) 
   await hydrated(page, '.quick-line');
   await page.locator('.quick-end').scrollIntoViewIfNeeded();
   await page.mouse.wheel(0, 600);
-  await expect(page.locator('.quick-line')).toHaveAttribute('data-left', '0');
+  await expect(page.locator('.quick-line')).toHaveAttribute('data-remaining', '0');
   await expect(page.locator('.quick-line')).toHaveAttribute('data-done', 'true');
   await expect(page.locator('.quick-line')).toContainText('خلصت');
   await page.reload();

@@ -21,7 +21,7 @@ export default function QuickRun({ lang, issue, listSelector }: Props) {
   const mounted = useMounted();
   const favs = mounted ? favsStore : null;
   const progress = mounted ? progressStore : null;
-  const [left, setLeft] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const [current, setCurrent] = useState<string>('');
   const [done, setDone] = useState(false);
   const ordered = useRef(false);
@@ -58,7 +58,7 @@ export default function QuickRun({ lang, issue, listSelector }: Props) {
       let idx = slabs.findIndex((el) => el.getBoundingClientRect().bottom > line);
       if (idx < 0) idx = slabs.length;
       const rest = slabs.slice(idx).reduce((a, el) => a + Number(el.dataset.min ?? 0), 0);
-      setLeft(Math.ceil(rest));
+      setRemaining(Math.ceil(rest));
       setCurrent(idx < slabs.length ? (slabs[idx].dataset.section ?? '') : '');
       const end = list.querySelector<HTMLElement>('[data-quick-end]');
       if (end && end.getBoundingClientRect().top < window.innerHeight * 0.9) setDone(true);
@@ -82,8 +82,8 @@ export default function QuickRun({ lang, issue, listSelector }: Props) {
 
   const finished = done || !!progress?.digestDone;
   return (
-    <p class="quick-line" aria-live="polite" data-current={current} data-left={left ?? ''} data-done={finished ? 'true' : 'false'}>
-      {finished && left === 0 ? t(lang, 'quick.done') : left === null ? '' : tp(lang, 'quick.left', left)}
+    <p class="quick-line" aria-live="polite" data-current={current} data-remaining={remaining ?? ''} data-done={finished ? 'true' : 'false'}>
+      {finished && remaining === 0 ? t(lang, 'quick.done') : remaining === null ? '' : tp(lang, 'quick.left', remaining)}
     </p>
   );
 }
