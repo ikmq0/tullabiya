@@ -1876,13 +1876,13 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
 .video .play:active {
   transform: scale(0.97);
 }
+/* Play points with time, not with reading direction: never mirrored. Inset from the slab's slanted
+   edge so the clip-path never shaves it. */
 .video .play .play-mark {
   flex: none;
   inline-size: 26px;
   block-size: 26px;
-}
-[dir='rtl'] .video .play .play-mark {
-  transform: scaleX(-1);
+  margin-inline-start: 0.35em;
 }
 .video.is-playing {
   clip-path: none;
