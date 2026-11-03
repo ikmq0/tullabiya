@@ -2,6 +2,7 @@ import type { ComponentChildren, RefObject } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '~/i18n';
 import { clamp, fitRegion, type Point, type Rect } from '~/lib/gesture';
+import { paintPages, type PaintPhoto } from '~/lib/pageCanvas';
 import type { Lang } from '~/lib/model';
 import { placeInPage } from '~/lib/pageLayout';
 import { neighborPages, stepPage, visiblePages } from '~/lib/reader';
@@ -40,17 +41,13 @@ interface Props {
   /** Turns a drag on a page (normalized points) into what it would mark, or null. */
   snap?: (page: number, a: Point, b: Point) => Rect[] | null;
   onMarkDrawn?: (page: number, rects: Rect[]) => void;
+  /** The originals of a page's photos, drawn over the page once it is zoomed. */
+  photosOf?: (page: number) => PaintPhoto[];
 }
 
 const name = (p: number) => String(p).padStart(2, '0');
 const lowRes = (base: string, p: number) => `${base}p${name(p)}.jpg`;
 const vector = (base: string, p: number) => `${base}v${name(p)}.svg`;
-
-/** How much of the zoom is already in the sheet's layout: its width against its base, from the inline style. */
-function layoutZOf(sheet: HTMLElement, z: number): number {
-  const m = sheet.style.transform ? new DOMMatrixReadOnly(getComputedStyle(sheet).transform).a : 1;
-  return Math.max(1, z / (m || 1));
-}
 
 function normalized(box: DOMRect, p: Point): Point {
   return { x: clamp((p.x - box.left) / box.width, 0, 1), y: clamp((p.y - box.top) / box.height, 0, 1) };
@@ -58,7 +55,7 @@ function normalized(box: DOMRect, p: Point): Point {
 
 /** The printed issue, page by page. The page follows the finger and settles by distance and speed; arrows
  *  move in reading direction. Only the open pages and their neighbors load up front. */
-export default function PageViewer({ lang, issue, pages, base, page, onPage, reader, wide = false, handle, endHref, onZoom, onTap, overlay, marking, snap, onMarkDrawn }: Props) {
+export default function PageViewer({ lang, issue, pages, base, page, onPage, reader, wide = false, handle, endHref, onZoom, onTap, overlay, marking, snap, onMarkDrawn, photosOf }: Props) {
   const [own, setOwn] = useState(page ?? 1);
   const p = page ?? own;
   const [live, setLive] = useState(false);
@@ -71,6 +68,9 @@ export default function PageViewer({ lang, issue, pages, base, page, onPage, rea
   /** Set when a vector page is missing: a fresh clone may have only the JPEGs. */
   const noVector = useRef(false);
   const pendingFocus = useRef<{ page: number; region: Rect; topInset: number } | null>(null);
+  const paintFrame = useRef(0);
+  const paintBroken = useRef(false);
+  const originals = useRef(new Map<string, HTMLImageElement>());
   const draft = useRef<{ el: HTMLElement; box: HTMLElement; page: number; from: Point; rects: Rect[] | null; target: Element } | null>(null);
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   const visible = visiblePages(pages, p, wide);
@@ -125,8 +125,40 @@ export default function PageViewer({ lang, issue, pages, base, page, onPage, rea
   }
   if (handle) handle.current = { step, jump, zoomBy: (d) => engine.current?.zoomBy(d), resetZoom: () => engine.current?.resetZoom(), focus };
 
-  const latest = useRef({ p, pages, wide, onTap, onZoom, snap, onMarkDrawn, commit });
-  latest.current = { p, pages, wide, onTap, onZoom, snap, onMarkDrawn, commit };
+  /** The settled view, painted at exact device pixels by the CPU: the same clean text on every GPU and browser.
+   *  The image stays underneath for gestures, and the canvas moves with it until the next paint. */
+  function paint() {
+    const st = stageEl.current;
+    const sheet = st?.querySelector<HTMLElement>('[data-at="cur"] .viewer-sheet');
+    const s = engine.current;
+    if (!reader || !st || !sheet || !s || paintBroken.current) return;
+    const painted = paintPages({
+      stage: st,
+      sheet,
+      view: s.view(),
+      dpr: window.devicePixelRatio || 1,
+      photosOf: (n) => photosOf?.(n) ?? [],
+      original: originalImage,
+    });
+    if (!painted) paintBroken.current = true;
+  }
+  /** An original photo, once it has decoded; asks for it and repaints when it arrives. */
+  function originalImage(src: string): HTMLImageElement | null {
+    const known = originals.current.get(src);
+    if (known) return known.complete && known.naturalWidth > 0 && known.dataset.ready ? known : null;
+    const im = new Image();
+    im.src = src;
+    originals.current.set(src, im);
+    void im.decode().then(() => {
+      im.dataset.ready = 'true';
+      cancelAnimationFrame(paintFrame.current);
+      paintFrame.current = requestAnimationFrame(() => latest.current.paint());
+    }, () => {});
+    return null;
+  }
+
+  const latest = useRef({ p, pages, wide, onTap, onZoom, snap, onMarkDrawn, commit, paint });
+  latest.current = { p, pages, wide, onTap, onZoom, snap, onMarkDrawn, commit, paint };
 
   useEffect(() => {
     if (!stageEl.current || !trackEl.current) return;
@@ -155,6 +187,11 @@ export default function PageViewer({ lang, issue, pages, base, page, onPage, rea
         },
         onTap: (on) => L.current.onTap?.(on),
         onView: (z) => L.current.onZoom?.(z),
+        onMoving: () => cancelAnimationFrame(paintFrame.current),
+        onSettled: () => {
+          cancelAnimationFrame(paintFrame.current);
+          paintFrame.current = requestAnimationFrame(() => L.current.paint());
+        },
         onMarkStart: (at, on) => {
           const box = on.closest<HTMLElement>('.viewer-page') ?? document.elementFromPoint(at.x, at.y)?.closest<HTMLElement>('.viewer-page');
           if (!box) return;
@@ -181,16 +218,6 @@ export default function PageViewer({ lang, issue, pages, base, page, onPage, rea
       {
         rtl: dir === 'rtl',
         zoom: !!reader,
-        commit: !!reader,
-        // Keeps each page's raster under about 4096 device pixels wide; past that the rest of the zoom is a transform.
-        maxLayoutZ: () => {
-          const sheet = stageEl.current?.querySelector<HTMLElement>('[data-at="cur"] .viewer-sheet');
-          const page = sheet?.querySelector<HTMLElement>('.viewer-page');
-          const z = engine.current?.zoom() ?? 1;
-          if (!page) return z;
-          const base = page.offsetWidth / layoutZOf(sheet!, z);
-          return 4096 / (Math.max(1, base) * (window.devicePixelRatio || 1));
-        },
         content: () => stageEl.current?.querySelector<HTMLElement>('[data-at="cur"] .viewer-sheet') ?? null,
         // A click on a photo opens it at once; a touch waits, since a double tap there still zooms the page.
         instantTap: (on, isMouse) => isMouse && !!on.closest('[data-photo-page]'),
@@ -207,6 +234,19 @@ export default function PageViewer({ lang, issue, pages, base, page, onPage, rea
 
   // The new page is in the DOM; the track goes back to rest before the browser paints.
   useLayoutEffect(() => engine.current?.landed(), [visibleKey]);
+
+  // A resized stage (the docked list opening, a rotated phone): the painted view is out of date.
+  useEffect(() => {
+    const st = stageEl.current;
+    if (!reader || !st || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      st.querySelector<HTMLElement>('.page-canvas')?.remove();
+      cancelAnimationFrame(paintFrame.current);
+      paintFrame.current = requestAnimationFrame(() => latest.current.paint());
+    });
+    ro.observe(st);
+    return () => ro.disconnect();
+  }, [reader]);
 
   // Arrived on a page with a story to fit: one movement from the whole page in to the story.
   useEffect(() => {
@@ -266,6 +306,13 @@ export default function PageViewer({ lang, issue, pages, base, page, onPage, rea
       data-page={n}
       draggable={false}
       decoding="async"
+      onLoad={(e) => {
+        const box = e.currentTarget.closest<HTMLElement>('.viewer-page');
+        if (box && e.currentTarget.src.endsWith('.svg')) box.dataset.vector = 'ready';
+        // The page just arrived: paint it now if nothing is moving.
+        cancelAnimationFrame(paintFrame.current);
+        paintFrame.current = requestAnimationFrame(() => latest.current.paint());
+      }}
       onError={(e) => {
         // The JPEG stands in when this copy of the site has no vector pages.
         if (!reader || noVector.current) return;
@@ -285,8 +332,9 @@ export default function PageViewer({ lang, issue, pages, base, page, onPage, rea
               key={n}
               data-page-box={n}
               data-slot={wide && list.length === 1 ? (n === 1 ? 'start' : 'end') : undefined}
-              // The picture of the page sits underneath, so a raster gap in the vector layer never shows blank paper.
-              style={{ backgroundImage: `url("${lowRes(base, n)}")` }}
+              // The picture of the page holds the place until the vector has loaded, then steps aside so no
+              // blurry text can show through at the glyphs' edges.
+              style={{ '--under': `url("${lowRes(base, n)}")` }}
             >
               {image(n)}
               {at === 'cur' && overlay?.(n)}

@@ -488,6 +488,7 @@ export default function ReaderApp({ lang, issue, pages, base, title, homeHref, e
         marking={marking}
         snap={(p: number, a: Point, b: Point) => snapMark(layoutsRef.current[p] ?? null, a, b)}
         onMarkDrawn={drawn}
+        photosOf={(n) => (layoutsRef.current[n]?.images ?? []).flatMap((im) => (im.file && !im.tilt ? [{ src: base + im.file, rect: im.rect, rot: im.rot ?? 0 }] : []))}
         overlay={(n) => (
           <>
             {!marking &&

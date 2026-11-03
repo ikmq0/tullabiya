@@ -10,6 +10,8 @@ export interface PagePhoto {
   px?: { w: number; h: number };
   /** Clockwise quarter turns as placed on the page. */
   rot?: number;
+  /** Placed at a slight angle, so it cannot be drawn exactly over its box. */
+  tilt?: boolean;
 }
 
 export interface PageLayout {
@@ -39,6 +41,7 @@ function toPhoto(v: unknown): PagePhoto | null {
     photo.file = o.file;
     photo.px = { w: o.w, h: o.h };
     if (o.rot === 1 || o.rot === 2 || o.rot === 3) photo.rot = o.rot;
+    if ((o as { tilt?: unknown }).tilt) photo.tilt = true;
   }
   return photo;
 }

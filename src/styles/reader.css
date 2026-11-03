@@ -83,6 +83,7 @@
 /* The page fits between the bars; on a phone the width decides, so it runs edge to edge. */
 .rd-app .viewer-sheet {
   position: relative;
+  isolation: isolate;
   inline-size: min(100cqw, calc((100cqh - var(--rd-top) - var(--rd-bottom)) * 0.7072));
   transform-origin: center;
 }
@@ -96,8 +97,22 @@
   background: var(--white);
 }
 .viewer-page {
+  background-image: var(--under);
   background-size: 100% 100%;
   background-repeat: no-repeat;
+}
+.viewer-page[data-vector='ready'] {
+  background-image: none;
+}
+/* The settled view at exact device pixels. It sits in the sheet, so it moves with a gesture until the next paint,
+   above the page images and below the reader's marks. Its placement is device space: top-left, as a transform. */
+.page-canvas {
+  position: absolute;
+  z-index: 1;
+  inset: 0 auto auto 0;
+  transform-origin: 0 0;
+  max-inline-size: none;
+  pointer-events: none;
 }
 .viewer-page[data-slot] {
   background-color: transparent;
@@ -121,12 +136,14 @@
 /* ---------- what sits on a page ---------- */
 .page-photo {
   position: absolute;
+  z-index: 2;
   display: block;
   padding: 0;
   cursor: zoom-in;
 }
 .page-mark {
   position: absolute;
+  z-index: 3;
   display: block;
   padding: 0;
   background: color-mix(in oklab, var(--yellow) 72%, transparent);
@@ -135,6 +152,7 @@
 }
 .page-draft {
   position: absolute;
+  z-index: 3;
   inset: 0;
   pointer-events: none;
 }
@@ -567,6 +585,12 @@
 .photo-viewer::backdrop {
   background: transparent;
 }
+/* The page shows through dimly; the photo stands out on it. */
+.photo-bg {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklab, var(--ground-dark) 70%, transparent);
+}
 .rd-app .photo-stage {
   position: absolute;
   inset: 0;
@@ -603,7 +627,6 @@
   max-inline-size: none;
   transform-origin: center;
 }
-/* No backdrop: the page stays in view behind the photo, which a solid frame sets apart from it. */
 .photo-box {
   position: absolute;
   inset: 0;

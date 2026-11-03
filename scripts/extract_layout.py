@@ -190,6 +190,9 @@ def page_layout(doc, page, number=1, outdir=None):
                     entry.update(saved)
                     if turns:
                         entry["rot"] = turns
+                    a, b = info["transform"][0], info["transform"][1]
+                    if min(abs(a), abs(b)) > 0.002 * max(abs(a), abs(b)):
+                        entry["tilt"] = 1
         images.append(entry)
 
     groups = {}

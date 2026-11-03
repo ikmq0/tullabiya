@@ -40,6 +40,7 @@ export default function PagePhotos({ lang, base, page, start, photos, stories, o
   const [natural, setNatural] = useState<Record<number, { w: number; h: number }>>({});
   const [loaded, setLoaded] = useState<ReadonlySet<number>>(new Set());
   const dialog = useRef<HTMLDialogElement>(null);
+  const bg = useRef<HTMLDivElement>(null);
   const stageEl = useRef<HTMLDivElement>(null);
   const flyEl = useRef<HTMLDivElement>(null);
   const trackEl = useRef<HTMLDivElement>(null);
@@ -101,6 +102,7 @@ export default function PagePhotos({ lang, base, page, start, photos, stories, o
     const to = toPage();
     if (!to) return finish();
     const a = fly.animate([{ transform: from === 'none' ? 'none' : from }, { transform: to }], { duration: CLOSE_MS, easing: easing(), fill: 'forwards' });
+    bg.current?.animate([{ opacity: getComputedStyle(bg.current).opacity }, { opacity: 0 }], { duration: CLOSE_MS, easing: 'linear', fill: 'forwards' });
     a.onfinish = finish;
   }
 
@@ -142,6 +144,9 @@ export default function PagePhotos({ lang, base, page, start, photos, stories, o
           setIndex((i) => i + d2);
         },
         onView: setZoom,
+        onDismissDrag: (p) => {
+          if (bg.current) bg.current.style.opacity = String(1 - p * 0.8);
+        },
         // A tap on the clear area around the photo closes it.
         onTap: (on) => {
           if (!on.closest('.photo-box')) requestClose();
@@ -177,6 +182,7 @@ export default function PagePhotos({ lang, base, page, start, photos, stories, o
     const from = toPage();
     const fly = flyEl.current;
     if (from && fly) flight.current = fly.animate([{ transform: from }, { transform: 'none' }], { duration: OPEN_MS, easing: easing() });
+    bg.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: OPEN_MS, easing: 'linear' });
   }, [area]);
 
   useLayoutEffect(() => engine.current?.landed(), [index]);
@@ -256,6 +262,7 @@ export default function PagePhotos({ lang, base, page, start, photos, stories, o
         requestClose();
       }}
     >
+      <div ref={bg} class="photo-bg" />
       <div ref={stageEl} class="viewer-stage photo-stage">
         <div ref={flyEl} class="photo-fly">
           <div ref={trackEl} class="viewer-track">

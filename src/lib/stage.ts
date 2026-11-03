@@ -14,6 +14,10 @@ export interface StageCallbacks {
   onTap?(target: Element): void;
   /** Zoom settled, at the end of a gesture or a button press. */
   onView?(z: number): void;
+  /** Input arrived: anything scheduled for a settled view is out of date. */
+  onMoving?(): void;
+  /** Nothing has moved for a moment: the place to paint at full quality. */
+  onSettled?(view: View): void;
   onMarkStart?(p: Point, target: Element): void;
   onMarkMove?(p: Point): void;
   onMarkEnd?(p: Point | null): void;
@@ -30,10 +34,6 @@ export interface StageOptions {
   content(): HTMLElement | null;
   /** The zoom limit, when the content sets its own. */
   maxZoom?(): number;
-  /** Once a gesture has been idle, size the content's layout to the zoom so vector content re-rasterizes crisp. */
-  commit?: boolean;
-  /** The highest zoom worth building into the layout; any more stays a transform. Bounds what must be rasterized. */
-  maxLayoutZ?(): number;
   /** Drag down at fit size to dismiss. */
   dismissDown?: boolean;
   /** A tap on this target needs no wait for a possible double tap. */
@@ -51,6 +51,7 @@ export interface Stage {
   moveTo(compute: (content: Size, stage: Size) => View): void;
   setMarking(on: boolean): void;
   zoom(): number;
+  view(): View;
   destroy(): void;
 }
 
@@ -60,11 +61,9 @@ const SETTLE_MS = 260;
 const ZOOM_MS = 220;
 const FOCUS_MS = 480;
 const SLOP = 8;
-const COMMIT_IDLE_MS = 150;
+const SETTLE_IDLE_MS = 150;
 /** A deliberate drag past the edge of a zoomed page turns it, once this far past. */
 const EDGE_TURN_PX = 48;
-/** Past this zoom a spread shows only the page in view, to keep the raster small. */
-const CULL_FROM = 1.5;
 const TOUCH_TAP_WAIT = 240;
 const MOUSE_TAP_WAIT = 200;
 const FALLBACK_EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
@@ -80,8 +79,6 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
   let mode: Mode = 'idle';
   let marking = false;
   let view: View = { z: 1, x: 0, y: 0 };
-  /** The zoom already built into the content's layout; the transform carries the rest. */
-  let layoutZ = 1;
   let trackX = 0;
   let trackY = 0;
   let settling: Animation | null = null;
@@ -102,17 +99,14 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
   let wheelPan = { x: 0, y: 0 };
   let swipeSum = 0;
   let swipeUntil = 0;
-  let commitTimer = 0;
+  let settleTimer = 0;
   /** Which way a drag may carry on into a page turn: the edge the zoomed page was already at when it began. */
   let edgeDir = 0;
 
-  const placed = (v: View) => {
-    const s = v.z / layoutZ;
-    return v.x || v.y || s !== 1 ? `translate(${v.x}px, ${v.y}px)${s !== 1 ? ` scale(${s})` : ''}` : '';
-  };
+  const placed = (v: View) => (v.x || v.y || v.z !== 1 ? `translate(${v.x}px, ${v.y}px)${v.z !== 1 ? ` scale(${v.z})` : ''}` : '');
   const size = (): { content: Size; stage: Size } => {
     const c = opts.content();
-    return { content: { w: (c?.offsetWidth ?? 0) / layoutZ, h: (c?.offsetHeight ?? 0) / layoutZ }, stage: { w: stage.clientWidth, h: stage.clientHeight } };
+    return { content: { w: c?.offsetWidth ?? 0, h: c?.offsetHeight ?? 0 }, stage: { w: stage.clientWidth, h: stage.clientHeight } };
   };
   const bounded = (v: View) => {
     const { content, stage: box } = size();
@@ -131,19 +125,6 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
     if (c) c.style.transform = placed(v);
     if (v.z > 1) stage.dataset.zoomed = 'true';
     else delete stage.dataset.zoomed;
-    cull();
-  }
-  /** On a zoomed spread, the page out of view is not drawn at all. It comes back before it can be seen. */
-  function cull() {
-    const c = opts.content();
-    if (!c || c.children.length < 2) return;
-    const box = stage.getBoundingClientRect();
-    const reach = 240;
-    for (const el of Array.from(c.children) as HTMLElement[]) {
-      const r = el.getBoundingClientRect();
-      const away = view.z > CULL_FROM && (r.right < box.left - reach || r.left > box.right + reach);
-      el.style.visibility = away ? 'hidden' : '';
-    }
   }
   function writeTrack(x: number, y = 0) {
     trackX = x;
@@ -160,22 +141,13 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
     else delete stage.dataset.dragging;
   }
 
-  /** With nothing moving, sizes the layout to the zoom: the browser re-rasterizes at the true scale, and no
-   *  layer is left stretched. The content stays centered in its panel, so nothing moves on screen. */
-  function commit() {
-    const c = opts.content();
-    if (!opts.commit || !c) return;
-    const next = Math.min(view.z, Math.max(1, opts.maxLayoutZ?.() ?? view.z));
-    if (next === layoutZ) return;
-    const base = c.offsetWidth / layoutZ;
-    layoutZ = next;
-    c.style.inlineSize = next > 1 ? `${base * next}px` : '';
-    c.style.maxInlineSize = next > 1 ? 'none' : '';
-    c.style.transform = placed(view);
+  function settleSoon() {
+    clearTimeout(settleTimer);
+    settleTimer = window.setTimeout(() => cb.onSettled?.(view), SETTLE_IDLE_MS);
   }
-  function commitSoon() {
-    clearTimeout(commitTimer);
-    if (opts.commit) commitTimer = window.setTimeout(commit, COMMIT_IDLE_MS);
+  function moving() {
+    clearTimeout(settleTimer);
+    cb.onMoving?.();
   }
 
   function stopGlide() {
@@ -199,7 +171,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
         viewAnim.cancel();
         viewAnim = null;
         hint(c, false);
-        writeView({ z: m.a * layoutZ, x: m.m41, y: m.m42 });
+        writeView({ z: m.a, x: m.m41, y: m.m42 });
       }
     }
   }
@@ -233,14 +205,14 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
     const before = placed(from) || 'none';
     writeView(to);
     cb.onView?.(to.z);
-    if (!c || calm()) return commitSoon();
+    if (!c || calm()) return settleSoon();
     hint(c, true);
     const a = c.animate([{ transform: before }, { transform: placed(to) || 'none' }], { duration, easing: ease() });
     viewAnim = a;
     a.onfinish = () => {
       if (viewAnim === a) viewAnim = null;
       hint(c, false);
-      commitSoon();
+      settleSoon();
     };
   }
 
@@ -260,6 +232,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
       writeView(next);
       if (Math.hypot(sx, sy) < 0.02) {
         glide = 0;
+        settleSoon();
         return;
       }
       glide = requestAnimationFrame(step);
@@ -285,7 +258,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
   function onDown(e: PointerEvent) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    clearTimeout(commitTimer);
+    moving();
     if (pointers.size === 1) {
       const wasSettling = !!settling;
       interrupt();
@@ -449,7 +422,7 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
     writeView(inside);
     cb.onView?.(view.z);
     if (mayCoast && !calm() && Math.hypot(vx, vy) > 0.25) coast(vx, vy);
-    commitSoon();
+    else settleSoon();
   }
 
   function tap(e: PointerEvent, on: Element) {
@@ -538,12 +511,12 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
         }
       });
     }
-    clearTimeout(commitTimer);
+    moving();
     clearTimeout(wheelIdle);
     wheelIdle = window.setTimeout(() => {
       cb.onView?.(view.z);
-      commit();
-    }, COMMIT_IDLE_MS);
+      cb.onSettled?.(view);
+    }, SETTLE_IDLE_MS);
   }
 
   stage.addEventListener('pointerdown', onDown);
@@ -572,32 +545,32 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
       viewAnim?.cancel();
       viewAnim = null;
       stopGlide();
-      clearTimeout(commitTimer);
       hint(track, false);
       writeTrack(0);
       view = { z: 1, x: 0, y: 0 };
-      layoutZ = 1;
       const c = opts.content();
       if (c) {
         c.style.transform = '';
-        c.style.inlineSize = '';
-        c.style.maxInlineSize = '';
         hint(c, false);
-        for (const el of Array.from(c.children) as HTMLElement[]) el.style.visibility = '';
       }
       delete stage.dataset.zoomed;
       cb.onView?.(1);
+      moving();
+      settleSoon();
     },
     zoomBy(delta) {
+      moving();
       interrupt();
       const { content, stage: box } = size();
       animateView(zoomAbout(view, clamp(view.z + delta, MIN_ZOOM, limit()), { x: 0, y: 0 }, content, box, limit()));
     },
     resetZoom() {
+      moving();
       interrupt();
       animateView({ z: 1, x: 0, y: 0 });
     },
     moveTo(compute) {
+      moving();
       interrupt();
       const { content, stage: box } = size();
       animateView(compute(content, box), FOCUS_MS);
@@ -608,10 +581,11 @@ export function createStage(stage: HTMLElement, track: HTMLElement, cb: StageCal
       else delete stage.dataset.marking;
     },
     zoom: () => view.z,
+    view: () => view,
     destroy() {
       clearTimeout(tapTimer);
       clearTimeout(wheelIdle);
-      clearTimeout(commitTimer);
+      clearTimeout(settleTimer);
       if (wheelFrame) cancelAnimationFrame(wheelFrame);
       stopGlide();
       settling?.cancel();

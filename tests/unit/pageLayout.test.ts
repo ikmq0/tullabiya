@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { boundsOf, cropStyle, mergeLines, nearestWord, padRect, parseLayout, photoSource, placeInPage, snapMark, type PageLayout } from '~/lib/pageLayout';
 
@@ -82,6 +83,16 @@ describe('a photo\'s source', () => {
   });
   it('without an original, falls back to the page at print resolution', () => {
     expect(photoSource({ rect })).toEqual({ w: 1240, h: 877 });
+  });
+});
+
+describe('a real layout file', () => {
+  it('page 2 of issue 21 parses to its six photos, each with an original', () => {
+    const file = readFileSync(new URL('../../public/archive/21/l02.json', import.meta.url), 'utf8');
+    const layout = parseLayout(JSON.parse(file))!;
+    expect(layout.images).toHaveLength(6);
+    for (const im of layout.images) expect(im.file).toMatch(/^photos\/p2-\d\.jpg$/);
+    expect(layout.words.length).toBeGreaterThan(100);
   });
 });
 
