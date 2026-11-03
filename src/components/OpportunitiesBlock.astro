@@ -5,6 +5,7 @@ import { L, t, weekdayName } from '~/i18n';
 import { unitById } from '~/data';
 import { toIcsEvent } from '~/lib/ics';
 import { mailto } from '~/lib/entities';
+import { latinRuns } from '~/lib/latinRuns';
 import type { EventItem, Lang } from '~/lib/model';
 
 interface Props {
@@ -16,8 +17,10 @@ interface Props {
   limit?: number;
   /** The list page carries its own "my favorites only" chip; the home band drives the home. */
   filter?: boolean;
+  /** The home's short list: title and date, linking to the list page where the actions are. */
+  compact?: boolean;
 }
-const { lang, events, today, headingId = 'opp-title', limit, filter = false } = Astro.props;
+const { lang, events, today, headingId = 'opp-title', limit, filter = false, compact = false } = Astro.props;
 const dayMs = 86_400_000;
 const t0 = new Date(`${today}T12:00:00+03:00`).getTime();
 const rows = events
@@ -30,13 +33,27 @@ const rows = events
   <div class="wrap">
     <div class="opp-head">
       <h2 id={headingId}>{t(lang, 'opp.title')}</h2>
-      <p>{t(lang, 'opp.lead')}</p>
+      {!compact && <p>{t(lang, 'opp.lead')}</p>}
       {filter && <ForYouFilter client:idle lang={lang} />}
     </div>
     <div class="rows" data-fy-list data-fy-hide={filter || undefined}>
       <p class="favs-empty" data-fy-empty hidden>{t(lang, 'foryou.emptyList')}</p>
       {rows.map(({ e, daysLeft }) => {
         const u = unitById(e.unitId);
+        if (compact) {
+          return (
+            <article class="row compact" data-fy data-units={e.unitId}>
+              <div class="d">
+                {Number(e.start.slice(8, 10))}
+                <small>{weekdayName(lang, e.start)}</small>
+              </div>
+              <div>
+                <span class="fy-mark" aria-hidden="true">{t(lang, 'foryou.mark')}</span>
+                <h3><a href={`/${lang}/opportunities/`}>{latinRuns(L(e.title, lang)).map((r) => (r.nowrap ? <span class="nowrap">{r.text}</span> : r.text))}</a></h3>
+              </div>
+            </article>
+          );
+        }
         return (
           <OpportunityRow
             client:visible
@@ -55,5 +72,6 @@ const rows = events
         );
       })}
     </div>
+    {compact && <p class="opp-all"><a href={`/${lang}/opportunities/`}>{t(lang, 'opp.all')}</a></p>}
   </div>
 </section>

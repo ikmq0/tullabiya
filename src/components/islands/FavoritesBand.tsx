@@ -2,7 +2,7 @@ import { useEffect } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
 import { t, L } from '~/i18n';
 import { EMPTY_FAVORITES, SECTIONS, type Lang, type SectionId } from '~/lib/model';
-import { $favorites, $forYou, $profile, $progress, $sheet, hydrate, togglePinnedSection } from '~/lib/store';
+import { $favorites, $forYou, $profile, $progress, hydrate, togglePinnedSection } from '~/lib/store';
 import { sectionsReadCount } from '~/lib/progress';
 import { isForMe } from '~/lib/personalization';
 import { applyForYou } from '~/lib/foryou';
@@ -29,7 +29,8 @@ interface Props {
   items: FavItem[];
 }
 
-/** Pin sections, see what your follows brought this month, narrow the page to it; progress as five bars. */
+/** Pin sections, see what your follows brought this month, narrow the page to it; progress as five bars.
+ *  Absent until the reader follows or pins something: it invites nobody. */
 export default function FavoritesBand({ lang, issue, items }: Props) {
   const favsStore = useStore($favorites);
   const progressStore = useStore($progress);
@@ -41,14 +42,14 @@ export default function FavoritesBand({ lang, issue, items }: Props) {
   const profile = mounted ? profileStore : null;
   useEffect(() => void hydrate(issue), [issue]);
   useEffect(() => applyForYou(mounted && forYou, favs), [mounted, forYou, favs]);
+  if (favs.sections.length + favs.units.length === 0) return null;
   const read = sectionsReadCount(progress ?? undefined);
   const readSet = new Set(progress?.sectionsRead ?? []);
-  const following = favs.sections.length + favs.units.length > 0;
   const mine = items.filter((it) => isForMe(it, favs)).slice(0, 4);
   const kindLabel = (it: FavItem) => (it.kind === 'event' ? t(lang, 'favs.event') : L(SECTIONS.find((s) => s.id === it.section)!.name, lang));
 
   return (
-    <>
+    <section class="favs" aria-labelledby="favs-title">
       <div class="favs-in">
         <div>
           <h2 id="favs-title">{t(lang, 'favs.title')}</h2>
@@ -82,18 +83,12 @@ export default function FavoritesBand({ lang, issue, items }: Props) {
           </div>
         </div>
       </div>
-      <div class="favs-items" data-following={following ? 'true' : 'false'}>
+      <div class="favs-items">
         <div class="favs-items-head">
           <h3>{t(lang, 'favs.items')}</h3>
           <ForYouToggle lang={lang} />
         </div>
-        {!following && (
-          <p class="favs-empty">
-            {t(lang, 'favs.noneYet')}{' '}
-            <button type="button" class="btn sm ghost" onClick={() => $sheet.set('onboarding')}>{t(lang, 'favs.choose')}</button>
-          </p>
-        )}
-        {following && mine.length === 0 && <p class="favs-empty">{t(lang, 'favs.nothingNew')}</p>}
+        {mine.length === 0 && <p class="favs-empty">{t(lang, 'favs.nothingNew')}</p>}
         {mine.length > 0 && (
           <ul class="fav-list">
             {mine.map((it) => (
@@ -107,6 +102,6 @@ export default function FavoritesBand({ lang, issue, items }: Props) {
           </ul>
         )}
       </div>
-    </>
+    </section>
   );
 }

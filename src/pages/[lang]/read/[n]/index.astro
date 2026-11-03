@@ -1,0 +1,114 @@
+---
+import '~/styles/reader.css';
+import Base from '~/layouts/Base.astro';
+import ReaderApp from '~/components/islands/ReaderApp';
+import sources from '../../../../../scripts/archive-sources.json';
+import { loadAll, storiesOf } from '~/data';
+import { L, formatDate, t } from '~/i18n';
+import { fingerprint } from '~/lib/fingerprint';
+import { latinRuns } from '~/lib/latinRuns';
+import { SECTIONS, type ArchiveEntry, type Lang } from '~/lib/model';
+import { adjacentIssues, groupBySection, groupPages, hasPages, remotePdfUrl, storiesOnPages } from '~/lib/reader';
+
+export function getStaticPaths() {
+  const b = loadAll();
+  return (['ar', 'en'] as Lang[]).flatMap((lang) => b.archive.map((a) => ({ params: { lang, n: String(a.number) }, props: { entry: a } })));
+}
+const lang = Astro.params.lang as Lang;
+const { entry } = Astro.props as { entry: ArchiveEntry };
+const bundle = loadAll();
+const n = entry.number;
+const stories = storiesOf(n);
+const local = hasPages(entry);
+const pages = local ? entry.pages : 0;
+const base = `/archive/${n}/`;
+const remote = local ? null : remotePdfUrl(sources, n);
+const { prev, next } = adjacentIssues(bundle.archive.map((a) => a.number), n);
+const sectionName = (id: string) => L(SECTIONS.find((s) => s.id === id)!.name, lang);
+const storyHref = (s: { issue: number; slug: string }) => `/${lang}/issue/${s.issue}/${s.slug}/`;
+const issueRef = (k: number | null) => (k === null ? null : { href: `/${lang}/read/${k}/`, label: t(lang, 'arch.issue', { n: k }) });
+const homeHref = `/${lang}/`;
+const endHref = `/${lang}/read/${n}/end/`;
+const hardHref = `/${lang}/hard-copy/`;
+const title = t(lang, 'arch.issue', { n });
+const month = entry.month ? formatDate(lang, entry.month, { month: 'long' }).replace(/^\d+\s*/, '') : null;
+const outline = groupBySection(stories).map((g) => ({
+  id: g.section,
+  name: sectionName(g.section),
+  stories: g.stories.map((s) => ({ id: s.id, title: L(s.title, lang), page: s.pdfPage ?? null, region: s.pdfRegion ?? null, webHref: s.pdfPage ? null : storyHref(s) })),
+}));
+const groups = groupPages(pages, stories).map((g) => ({ section: g.section, label: g.section ? sectionName(g.section) : null, pages: g.pages }));
+const pageList = Array.from({ length: pages }, (_, i) => i + 1);
+const pageFile = (p: number) => `${base}p${String(p).padStart(2, '0')}.jpg`;
+---
+<Base lang={lang} title={`${title} | ${t(lang, 'site.name')}`} description={entry.coverLine ? L(entry.coverLine, lang) : title}>
+  <main id="main" class="rd" data-reader>
+    {local && (
+      <script is:inline>
+        // With JavaScript the app takes the whole screen from the first paint; without it, the plain list below shows.
+        document.documentElement.setAttribute('data-reader-app', '');
+      </script>
+    )}
+    {local && (
+      <ReaderApp
+        client:load
+        lang={lang}
+        issue={n}
+        pages={pages}
+        base={base}
+        title={title}
+        homeHref={homeHref}
+        endHref={endHref}
+        hardHref={hardHref}
+        prevIssue={issueRef(prev)}
+        nextIssue={issueRef(next)}
+        outline={outline}
+        groups={groups}
+      />
+    )}
+
+    <div class="rd-plain">
+      <p><a href={homeHref}>{t(lang, 'rd.backToSite')}</a></p>
+      {!local && <h1>{title}</h1>}
+      {local && <h2>{title}</h2>}
+      {entry.coverLine && <p class="rd-plain-line">{L(entry.coverLine, lang)}</p>}
+      {month && <p>{month}</p>}
+      {local ? (
+        <>
+          <p><a href={`${base}issue.pdf`} download>{t(lang, 'arch.download')}</a></p>
+          <ol class="rd-plain-pages">
+            {pageList.map((p) => {
+              const here = storiesOnPages(stories, [p]);
+              return (
+                <li id={`p${p}`}>
+                  <a href={pageFile(p)}>{t(lang, 'arch.page', { k: p, n: pages })}</a>
+                  {here.length > 0 && (
+                    <ul>
+                      {here.map((s) => <li><a href={storyHref(s)}>{latinRuns(L(s.title, lang)).map((r) => (r.nowrap ? <span class="nowrap">{r.text}</span> : r.text))}</a></li>)}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      ) : (
+        <div class="rd-remote">
+          <div class="rd-fp" aria-hidden="true">
+            {fingerprint(n, 12).map((h) => <i style={`block-size:${h}%`} />)}
+          </div>
+          <div>
+            <p>{t(lang, remote ? 'read.noPages' : 'read.noPagesNoLink')}</p>
+            {remote && <a class="btn sm" href={remote} rel="noopener">{t(lang, 'arch.download')}</a>}
+          </div>
+        </div>
+      )}
+      <ul class="rd-plain-links">
+        {prev !== null && <li><a href={`/${lang}/read/${prev}/`} rel="prev">{t(lang, 'read.prevIssue')}: {t(lang, 'arch.issue', { n: prev })}</a></li>}
+        {next !== null && <li><a href={`/${lang}/read/${next}/`} rel="next">{t(lang, 'read.nextIssue')}: {t(lang, 'arch.issue', { n: next })}</a></li>}
+        <li><a href={endHref}>{t(lang, 'read.toEnd')}</a></li>
+        <li><a href={hardHref}>{t(lang, 'hard.title')}</a></li>
+      </ul>
+    </div>
+  </main>
+</Base>

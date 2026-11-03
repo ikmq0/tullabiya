@@ -1,5 +1,6 @@
 ---
 import '~/styles/archive.css';
+import '~/styles/reader.css';
 import Base from '~/layouts/Base.astro';
 import TopBar from '~/components/TopBar.astro';
 import Footer from '~/components/Footer.astro';
@@ -45,6 +46,7 @@ const title = t(lang, 'arch.issue', { n });
         {entry.month && <p>{formatDate(lang, entry.month, { month: 'long' }).replace(/^\d+\s*/, '')}</p>}
         {local && <p>{tp(lang, 'arch.pages', entry.pages)}</p>}
         <div class="act-row">
+          <a class="btn sm" href={`/${lang}/read/${n}/`}>{t(lang, 'read.open')}</a>
           {local && <a class="btn sm" href={`${base}issue.pdf`} download>{t(lang, 'arch.download')}</a>}
           {!local && remoteUrl && <a class="btn sm" href={remoteUrl} rel="noopener">{t(lang, 'arch.download')}</a>}
           <a class="btn sm ghost" href={`/${lang}/archive/`}>{t(lang, 'nav.archive')}</a>

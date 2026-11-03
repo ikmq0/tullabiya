@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { hydrated } from './helpers';
 
-test('the video story shows a poster on the home and loads the player only on tap', async ({ page }) => {
-  await page.goto('/ar/');
-  const card = page.locator('.side-story', { hasText: 'يوم الأبحاث' });
-  await card.scrollIntoViewIfNeeded();
+test('the video story shows a poster and loads the player only on tap', async ({ page }) => {
+  await page.goto('/ar/issue/21/research-day/');
+  const card = page.locator('.story-video');
   await hydrated(page, '.video');
   await expect(card.locator('.video img')).toHaveAttribute('src', /ytimg\.com\/vi\/OYayy3Z4qls/);
   await expect(card.locator('iframe')).toHaveCount(0);

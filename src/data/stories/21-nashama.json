@@ -14,5 +14,6 @@
   "authorId": "marah-alamlah",
   "unitIds": ["mag"],
   "pdfPage": 6,
+  "pdfRegion": { "x": 0.57, "y": 0.705, "w": 0.385, "h": 0.22 },
   "readingMinutes": 1
 }

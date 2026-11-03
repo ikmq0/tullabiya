@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createLocalApi } from '~/lib/api/LocalApi';
 import { memoryStorage, type StorageLike } from '~/lib/api/storage';
-import type { Hunt, Poll } from '~/lib/model';
+import { KEYS, type Hunt, type Poll } from '~/lib/model';
 
 const T0 = new Date('2026-09-12T10:00:00+03:00').getTime();
 
@@ -103,6 +103,125 @@ describe('progress', () => {
   });
 });
 
+describe('reader position', () => {
+  it('is null until the reader has been there', async () => {
+    expect(await make().getReaderPosition(21)).toBeNull();
+  });
+  it('remembers the page per issue, across instances', async () => {
+    const storage = memoryStorage();
+    expect(await make(storage).saveReaderPosition(21, 5)).toEqual({ issue: 21, page: 5 });
+    await make(storage).saveReaderPosition(7, 2);
+    expect(await make(storage).getReaderPosition(21)).toEqual({ issue: 21, page: 5 });
+    expect(await make(storage).getReaderPosition(7)).toEqual({ issue: 7, page: 2 });
+    expect(await make(storage).getReaderPosition(3)).toBeNull();
+  });
+  it('remembers the story too, and forgets it when the reader moves on without one', async () => {
+    const api = make();
+    await api.saveReaderPosition(21, 5, '21-musab');
+    expect(await api.getReaderPosition(21)).toEqual({ issue: 21, page: 5, storyId: '21-musab' });
+    await api.saveReaderPosition(21, 6);
+    expect(await api.getReaderPosition(21)).toEqual({ issue: 21, page: 6 });
+  });
+  it('the latest save wins and a nonsense page settles on the first', async () => {
+    const api = make();
+    await api.saveReaderPosition(21, 5);
+    expect((await api.saveReaderPosition(21, 6)).page).toBe(6);
+    expect((await api.saveReaderPosition(21, 0)).page).toBe(1);
+    expect((await api.saveReaderPosition(21, Number.NaN)).page).toBe(1);
+  });
+  it('tolerates state stored before the reader existed, and keeps everything else in it', async () => {
+    const storage = memoryStorage();
+    await make(storage).saveProfile({ name: 'سعد', color: 'orange', address: 'm' });
+    const old = JSON.parse(storage.getItem(KEYS.state)!);
+    delete old.reader;
+    storage.setItem(KEYS.state, JSON.stringify(old));
+    expect(await make(storage).getReaderPosition(21)).toBeNull();
+    await make(storage).saveReaderPosition(21, 3);
+    expect((await make(storage).getReaderPosition(21))?.page).toBe(3);
+    expect((await make(storage).getProfile())?.name).toBe('سعد');
+  });
+  it('ignores a malformed stored position', async () => {
+    const storage = memoryStorage();
+    await make(storage).saveReaderPosition(21, 3);
+    const state = JSON.parse(storage.getItem(KEYS.state)!);
+    state.reader['21'] = { page: 'three' };
+    storage.setItem(KEYS.state, JSON.stringify(state));
+    expect(await make(storage).getReaderPosition(21)).toBeNull();
+  });
+  it('is erased by reset', async () => {
+    const api = make();
+    await api.saveReaderPosition(21, 3);
+    await api.reset();
+    expect(await api.getReaderPosition(21)).toBeNull();
+  });
+});
+
+describe('page marks', () => {
+  const rect = { x: 0.1, y: 0.2, w: 0.3, h: 0.05 };
+
+  it('keeps marks per issue, across instances, oldest first', async () => {
+    const storage = memoryStorage();
+    const a = await make(storage).addMark(21, 3, [rect]);
+    const b = await make(storage).addMark(21, 5, [rect, { ...rect, y: 0.3 }], 'ملاحظة');
+    const c = await make(storage).addMark(7, 1, [rect]);
+    expect(new Set([a.id, b.id, c.id]).size).toBe(3);
+    const mine = await make(storage).listMarks(21);
+    expect(mine.map((m) => m.id)).toEqual([a.id, b.id]);
+    expect(mine[0]).toMatchObject({ issue: 21, page: 3, rects: [rect], comment: '' });
+    expect(mine[1].rects.length).toBe(2);
+    expect(mine[1].comment).toBe('ملاحظة');
+    expect((await make(storage).listMarks()).length).toBe(3);
+    expect(await make(memoryStorage()).listMarks()).toEqual([]);
+  });
+  it('comments are plain text, capped, and editable', async () => {
+    const api = make();
+    const m = await api.addMark(21, 3, [rect], '<img src=x onerror=alert(1)>مفيد <b>جداً</b>');
+    expect(m.comment).toBe('مفيد جداً');
+    const long = await api.updateMark(m.id, { comment: 'ب'.repeat(500) });
+    expect(Array.from(long.comment).length).toBe(280);
+    expect((await api.updateMark(m.id, { comment: '  ' })).comment).toBe('');
+  });
+  it('rejects a mark with nothing to mark and clamps rectangles to the page', async () => {
+    const api = make();
+    await expect(api.addMark(21, 3, [])).rejects.toThrow();
+    await expect(api.addMark(21, 0, [rect])).rejects.toThrow();
+    await expect(api.addMark(21, 3, [{ x: 0, y: 0, w: 0, h: 0.2 }])).rejects.toThrow();
+    await expect(api.addMark(21, 3, [{ x: Number.NaN, y: 0, w: 1, h: 1 }])).rejects.toThrow();
+    const m = await api.addMark(21, 3, [{ x: 0.9, y: -1, w: 0.5, h: 0.5 }]);
+    expect(m.rects[0]).toEqual({ x: 0.9, y: 0, w: expect.closeTo(0.1), h: 0.5 });
+  });
+  it('delete removes only that one, and updating an unknown one fails', async () => {
+    const api = make();
+    const a = await api.addMark(21, 3, [rect]);
+    const b = await api.addMark(21, 4, [rect]);
+    await api.deleteMark(a.id);
+    expect((await api.listMarks()).map((m) => m.id)).toEqual([b.id]);
+    await expect(api.updateMark(a.id, { comment: 'x' })).rejects.toThrow();
+  });
+  it('sending to the editors goes through the pending submissions and is never public', async () => {
+    const api = make();
+    const m = await api.addMark(21, 3, [rect], 'تعليق');
+    const sub = await api.submitUserContent('comment', m.comment, 'issue-21-page-3');
+    expect(sub.status).toBe('pending');
+    expect((await api.updateMark(m.id, { sentId: sub.id })).sentId).toBe(sub.id);
+    expect((await api.listMySubmissions()).map((s) => s.id)).toContain(sub.id);
+    expect(await make(memoryStorage()).listMySubmissions()).toEqual([]);
+  });
+  it('tolerates state stored before marks, is in the export, and is cleared by reset', async () => {
+    const storage = memoryStorage();
+    await make(storage).saveProfile({ name: 'سعد', color: 'orange', address: 'm' });
+    const old = JSON.parse(storage.getItem(KEYS.state)!);
+    delete old.marks;
+    storage.setItem(KEYS.state, JSON.stringify(old));
+    const api = make(storage);
+    expect(await api.listMarks()).toEqual([]);
+    const m = await api.addMark(21, 3, [rect]);
+    expect(JSON.parse(await api.exportAll()).marks[0].id).toBe(m.id);
+    await api.reset();
+    expect(await api.listMarks()).toEqual([]);
+  });
+});
+
 describe('submissions and privacy', () => {
   it('submitUserContent returns pending and never appears publicly', async () => {
     const api = make();
@@ -139,6 +258,10 @@ describe('storage failures', () => {
     await expect(api.getPoll('p-small')).resolves.toBeTruthy();
     await expect(api.toggleSaved('x')).resolves.toBeTruthy();
     await expect(api.getHunt('h')).resolves.toBeTruthy();
+    await expect(api.saveReaderPosition(21, 2)).resolves.toBeTruthy();
+    await expect(api.getReaderPosition(21)).resolves.toBeNull();
+    await expect(api.addMark(21, 1, [{ x: 0, y: 0, w: 0.5, h: 0.5 }])).resolves.toBeTruthy();
+    await expect(api.listMarks()).resolves.toEqual([]);
     await expect(api.reset()).resolves.toBeUndefined();
   });
 });

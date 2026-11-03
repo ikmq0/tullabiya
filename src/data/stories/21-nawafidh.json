@@ -14,5 +14,6 @@
   },
   "unitIds": ["mag"],
   "pdfPage": 8,
+  "pdfRegion": { "x": 0.525, "y": 0.37, "w": 0.43, "h": 0.415 },
   "readingMinutes": 2
 }

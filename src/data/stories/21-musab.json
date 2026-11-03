@@ -22,5 +22,6 @@
   "photo": "musab",
   "photoAlt": { "ar": "مصعب الباقر يتسلّم درع التكريم", "en": "Musab Al-Baqir receiving his award", "enStatus": "machine" },
   "pdfPage": 5,
+  "pdfRegion": { "x": 0.04, "y": 0.08, "w": 0.92, "h": 0.85 },
   "readingMinutes": 7
 }

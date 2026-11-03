@@ -1,0 +1,51 @@
+---
+import '~/styles/reader-links.css';
+import Base from '~/layouts/Base.astro';
+import TopBar from '~/components/TopBar.astro';
+import Footer from '~/components/Footer.astro';
+import Onboarding from '~/components/islands/Onboarding';
+import { currentIssue, loadAll } from '~/data';
+import { L, monthName, t } from '~/i18n';
+import type { Lang } from '~/lib/model';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'ar' } }, { params: { lang: 'en' } }];
+}
+const lang = Astro.params.lang as Lang;
+const bundle = loadAll();
+const unitList = bundle.units.map((u) => ({ id: u.id, name: u.name }));
+const issue = currentIssue();
+const local = bundle.archive.find((a) => a.number === issue.number)?.local;
+const month = monthName(lang, issue.year, issue.month);
+const title = t(lang, 'hard.title');
+const CONTACT = 'dsa-mag@kfupm.edu.sa';
+---
+<Base lang={lang} title={`${title} | ${t(lang, 'site.name')}`} description={t(lang, 'hard.lead', { n: issue.number, month })}>
+  <TopBar lang={lang} issue={issue.number} />
+  <main id="main" class="wrap reader hard">
+    <div class="hard-grid">
+      <div>
+        <h1>{title}</h1>
+        <p class="reader-line">{t(lang, 'hard.lead', { n: issue.number, month })}</p>
+        {bundle.pickup.map((point) => (
+          <section class="hard-point" aria-labelledby={`pickup-${point.id}`}>
+            <p class="hard-label">{t(lang, 'hard.where')}</p>
+            <h2 id={`pickup-${point.id}`}>{L(point.name, lang)}</h2>
+            {point.room && <p><strong>{t(lang, 'hard.room')}:</strong> {L(point.room, lang)}</p>}
+            {point.hours && <p class="hard-hours"><strong>{t(lang, 'hard.hours')}:</strong> {L(point.hours, lang)}</p>}
+            {point.mapUrl && <p><a href={point.mapUrl} rel="noopener">{t(lang, 'hard.map')}</a></p>}
+          </section>
+        ))}
+        <p class="hard-ask">{t(lang, 'hard.ask')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a></p>
+        <a class="btn" href={`/${lang}/read/${issue.number}/`}>{t(lang, 'hard.read')}</a>
+      </div>
+      {local && (
+        <div class="hard-cover fast-photo">
+          <img src={`/archive/${issue.number}/cover.jpg`} alt={L(issue.coverAlt, lang)} width={1240} height={1754} />
+        </div>
+      )}
+    </div>
+  </main>
+  <Onboarding client:idle lang={lang} issue={issue.number} units={unitList} />
+  <Footer lang={lang} />
+</Base>

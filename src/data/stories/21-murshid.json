@@ -23,5 +23,6 @@
   "photo": "murshid",
   "photoAlt": { "ar": "طلاب في الحفل الختامي لبرنامج الإرشاد", "en": "Students at the Murshid program's closing ceremony", "enStatus": "machine" },
   "pdfPage": 3,
+  "pdfRegion": { "x": 0.655, "y": 0.07, "w": 0.31, "h": 0.71 },
   "readingMinutes": 3
 }

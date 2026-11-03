@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { loadAll, currentIssue, storiesOf, eventsInMonth } from '~/data';
-import { SECTION_IDS } from '~/lib/model';
+import { pickupSchema, storySchema } from '~/data/schemas';
+import { SECTION_IDS, type PickupPoint } from '~/lib/model';
 
 const b = loadAll();
 
@@ -82,5 +83,63 @@ describe('content bundle', () => {
     for (const p of b.polls) expect(p.sample).toBe(true);
     for (const h of b.hunts) expect(h.sample).toBe(true);
     expect(b.community.sample).toBe(true);
+  });
+});
+
+describe('story regions', () => {
+  it('every printed story in issue 21 has one, and the web-only story does not', () => {
+    for (const s of storiesOf(21)) {
+      if (s.pdfPage) expect(s.pdfRegion, s.id).toBeDefined();
+      else expect(s.pdfRegion, s.id).toBeUndefined();
+    }
+  });
+  it('stays on the page with a positive size', () => {
+    for (const s of b.stories) {
+      if (!s.pdfRegion) continue;
+      const { x, y, w, h } = s.pdfRegion;
+      expect(s.pdfPage, s.id).toBeGreaterThan(0);
+      expect(w, s.id).toBeGreaterThan(0);
+      expect(h, s.id).toBeGreaterThan(0);
+      expect(x, s.id).toBeGreaterThanOrEqual(0);
+      expect(y, s.id).toBeGreaterThanOrEqual(0);
+      expect(x + w, s.id).toBeLessThanOrEqual(1.0001);
+      expect(y + h, s.id).toBeLessThanOrEqual(1.0001);
+    }
+  });
+  it('rejects a region that runs off the page', () => {
+    const base = b.stories.find((s) => s.pdfRegion)!;
+    expect(storySchema.safeParse({ ...base, pdfRegion: { x: 0.9, y: 0, w: 0.5, h: 0.1 } }).success).toBe(false);
+    expect(storySchema.safeParse({ ...base, pdfRegion: { x: 0, y: 0, w: 0, h: 0.1 } }).success).toBe(false);
+  });
+});
+
+describe('hard copy pickup', () => {
+  it('holds the one point the owner confirmed, in both languages', () => {
+    expect(b.pickup.map((p) => p.id)).toEqual(['building-68']);
+    const [p] = b.pickup;
+    expect(p.name.ar).toBe('مبنى 68، جامعة الملك فهد للبترول والمعادن');
+    expect(p.name.en).toBe('Building 68, KFUPM');
+  });
+
+  it('records the hours the owner confirmed: anytime', () => {
+    expect(b.pickup[0].hours?.ar).toBe('في أي وقت');
+    expect(b.pickup[0].hours?.en).toBe('Anytime');
+  });
+
+  // Room and map link are not known. When the Deanship confirms them, fill them in and update this test;
+  // until then it keeps anything invented out of the file.
+  it('leaves the unknown fields out, and is real data rather than a sample', () => {
+    const [p] = b.pickup as (PickupPoint & { sample?: boolean })[];
+    expect(p.room).toBeUndefined();
+    expect(p.mapUrl).toBeUndefined();
+    expect(p.sample).toBeUndefined();
+  });
+
+  it('accepts the optional fields and rejects anything else, such as a stock count', () => {
+    const name = { ar: 'مبنى' };
+    expect(pickupSchema.safeParse([{ id: 'a', name, room: { ar: 'غرفة' }, hours: { ar: 'صباحاً' }, mapUrl: 'https://maps.test/x' }]).success).toBe(true);
+    expect(pickupSchema.safeParse([{ id: 'a', name, stock: 40 }]).success).toBe(false);
+    expect(pickupSchema.safeParse([{ id: 'a', name, mapUrl: 'not a url' }]).success).toBe(false);
+    expect(pickupSchema.safeParse([]).success).toBe(false);
   });
 });

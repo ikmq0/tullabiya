@@ -24,7 +24,8 @@ interface Props {
   contactHrefs: Record<string, string>;
 }
 
-/** Thirty slanted bars, one per day. Grows once on load (never again); selection is instant. */
+/** Thirty slanted bars, one per day. Grows once on load (never again); a day's detail opens only when
+ *  the reader picks a day, and tapping that day again closes it. */
 export default function MonthStrip({ lang, issue, year, month, monthLabel, today: todayProp, events, unitNames, contactHrefs }: Props) {
   const profileStore = useStore($profile);
   const mounted = useMounted();
@@ -37,6 +38,7 @@ export default function MonthStrip({ lang, issue, year, month, monthLabel, today
   const todayDay = today.startsWith(`${year}-${String(month).padStart(2, '0')}-`) ? Number(today.slice(8, 10)) : 0;
   const defaultSel = todayDay && days[todayDay - 1]?.events.length ? todayDay : (days.find((d) => d.day >= todayDay && d.events.length)?.day ?? firstEventDay);
   const [sel, setSel] = useState(defaultSel);
+  const [open, setOpen] = useState(false);
   const [evIdx, setEvIdx] = useState(0);
   const [reminders, setReminders] = useState<string[]>([]);
   const [grown, setGrown] = useState(false);
@@ -54,7 +56,7 @@ export default function MonthStrip({ lang, issue, year, month, monthLabel, today
   }, [issue]);
 
   useEffect(() => {
-    setSel(defaultSel);
+    if (!open) setSel(defaultSel);
   }, [defaultSel]);
 
   // Keep the selected day in view on narrow screens.
@@ -71,7 +73,9 @@ export default function MonthStrip({ lang, issue, year, month, monthLabel, today
   const select = (d: number) => {
     setSel(d);
     setEvIdx(0);
+    setOpen(true);
   };
+  const tap = (d: number) => (open && d === sel ? setOpen(false) : select(d));
 
   const onKey = (e: KeyboardEvent) => {
     let next = sel;
@@ -119,10 +123,10 @@ export default function MonthStrip({ lang, issue, year, month, monthLabel, today
                 type="button"
                 class={`day${d.kind !== 'quiet' ? ' ev' : ''}${d.kind === 'mine' ? ' mine' : ''}`}
                 style={{ '--i': d.day } as never}
-                aria-pressed={d.day === sel}
+                aria-pressed={open && d.day === sel}
                 aria-label={label}
                 tabIndex={d.day === sel ? 0 : -1}
-                onClick={() => select(d.day)}
+                onClick={() => tap(d.day)}
               >
                 {isToday && (
                   <span class="av you" aria-hidden="true" style={profile ? { background: accent(profile.color).color, color: accent(profile.color).ink === 'ink' ? 'var(--ink)' : 'var(--beige)' } : undefined}>
@@ -136,47 +140,51 @@ export default function MonthStrip({ lang, issue, year, month, monthLabel, today
           })}
         </div>
       </div>
-      <div class="detail" aria-live="polite">
-        <div class="big">{sel}</div>
-        {!ev && (
-          <div>
-            <h3>{t(lang, 'month.quietTitle')}</h3>
-            <p>{formatDate(lang, day.iso, { weekday: true })}</p>
-            <p>{t(lang, 'month.quietLead')}</p>
-          </div>
-        )}
-        {ev && (
-          <div>
-            <h3>{latin(L(ev.title, lang))}</h3>
-            <p>
-              {weekdayName(lang, day.iso)}
-              {day.events.length > 1 && ' ' + tp(lang, 'month.more', day.events.length - 1)}
-            </p>
-            <p>{L(ev.description, lang)}</p>
-            <p>{t(lang, 'month.organizer', { unit: unitNames[ev.unitId] ?? ev.unitId })}</p>
-            {day.events.length > 1 && (
-              <div class="chips" role="group">
-                {day.events.map((e, i) => (
-                  <button key={e.id} type="button" class="chip pin" aria-pressed={i === evIdx} onClick={() => setEvIdx(i)}>
-                    {L(e.title, lang)}
-                  </button>
-                ))}
+      <div aria-live="polite">
+        {open && (
+          <div class="detail">
+            <div class="big">{sel}</div>
+            {!ev && (
+              <div>
+                <h3>{t(lang, 'month.quietTitle')}</h3>
+                <p>{formatDate(lang, day.iso, { weekday: true })}</p>
+                <p>{t(lang, 'month.quietLead')}</p>
               </div>
             )}
-          </div>
-        )}
-        {ev && (
-          <div class="acts">
-            <AddToCalendar lang={lang} event={toIcsEvent(ev)} label={t(lang, 'month.addCal')} />
-            <button
-              type="button"
-              class={`btn sm${reminders.includes(ev.id) ? ' done' : ''}`}
-              aria-pressed={reminders.includes(ev.id)}
-              onClick={async () => setReminders(await getApi().toggleReminder(ev.id))}
-            >
-              {reminders.includes(ev.id) ? t(lang, 'month.reminded') : t(lang, 'month.remind')}
-            </button>
-            <a class="btn sm ghost" href={contactHrefs[ev.unitId] ?? 'mailto:dsa-mag@kfupm.edu.sa'}>{t(lang, 'month.contact')}</a>
+            {ev && (
+              <div>
+                <h3>{latin(L(ev.title, lang))}</h3>
+                <p>
+                  {weekdayName(lang, day.iso)}
+                  {day.events.length > 1 && ' ' + tp(lang, 'month.more', day.events.length - 1)}
+                </p>
+                <p>{L(ev.description, lang)}</p>
+                <p>{t(lang, 'month.organizer', { unit: unitNames[ev.unitId] ?? ev.unitId })}</p>
+                {day.events.length > 1 && (
+                  <div class="chips" role="group">
+                    {day.events.map((e, i) => (
+                      <button key={e.id} type="button" class="chip pin" aria-pressed={i === evIdx} onClick={() => setEvIdx(i)}>
+                        {L(e.title, lang)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {ev && (
+              <div class="acts">
+                <AddToCalendar lang={lang} event={toIcsEvent(ev)} label={t(lang, 'month.addCal')} />
+                <button
+                  type="button"
+                  class={`btn sm${reminders.includes(ev.id) ? ' done' : ''}`}
+                  aria-pressed={reminders.includes(ev.id)}
+                  onClick={async () => setReminders(await getApi().toggleReminder(ev.id))}
+                >
+                  {reminders.includes(ev.id) ? t(lang, 'month.reminded') : t(lang, 'month.remind')}
+                </button>
+                <a class="btn sm ghost" href={contactHrefs[ev.unitId] ?? 'mailto:dsa-mag@kfupm.edu.sa'}>{t(lang, 'month.contact')}</a>
+              </div>
+            )}
           </div>
         )}
       </div>

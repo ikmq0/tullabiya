@@ -1,7 +1,8 @@
 // Simulated backend: one JSON blob in storage plus seeded numbers and live ticks.
 // Replace with an HTTP implementation of Api; the islands never know.
 import type {
-  Api, HuntSolved, HuntState, IssueProgress, PollState, ReactionKind, ReactionState, Submission, SubmissionKind, VisitDelta,
+  Api, HuntSolved, HuntState, IssueProgress, MarkRect, PageMark, PollState, ReactionKind, ReactionState, ReaderPosition, Submission, SubmissionKind,
+  VisitDelta,
 } from './Api';
 import { readJson, safeStorage, writeJson, type StorageLike } from './storage';
 import { COLLEGE_ACCENT, EMPTY_FAVORITES, KEYS, type CollegeId, type Favorites, type Hunt, type Poll, type Profile } from '~/lib/model';
@@ -12,6 +13,7 @@ import { cluesOpenOn, makeCode, matchesAnswer } from '~/lib/hunt';
 import { dueStamps, type Stamp, type StampFacts } from '~/lib/stamps';
 import { issueState } from '~/lib/progress';
 import { sanitizeText } from '~/lib/sanitize';
+import { COMMENT_MAX } from '~/lib/notes';
 
 interface HuntUserState {
   attempts: number[];
@@ -37,6 +39,10 @@ interface State {
   /** Snapshot taken at the last visit, by wall-clock time, for "since your last visit". */
   lastVisit?: { at: number; pollTotals: Record<string, number>; clues: Record<string, number>; langs: string[]; delta: VisitDelta };
   stamps?: Stamp[];
+  /** Absent in state saved before the digital reader. */
+  reader?: Record<string, ReaderPosition>;
+  /** Absent in state saved before page marks. */
+  marks?: PageMark[];
 }
 
 export interface LocalApiDeps {
@@ -60,6 +66,21 @@ function hash(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
   return h >>> 0;
+}
+
+/** Keeps rectangles on the page. Throws when nothing valid is left to mark. */
+function cleanRects(rects: MarkRect[]): MarkRect[] {
+  const unit = (n: number) => Math.min(1, Math.max(0, n));
+  const out = rects
+    .filter((r) => [r.x, r.y, r.w, r.h].every(Number.isFinite) && r.w > 0 && r.h > 0)
+    .map((r) => {
+      const x = unit(r.x);
+      const y = unit(r.y);
+      return { x, y, w: Math.min(r.w, 1 - x), h: Math.min(r.h, 1 - y) };
+    })
+    .filter((r) => r.w > 0 && r.h > 0);
+  if (out.length === 0) throw new Error('nothing to mark');
+  return out;
 }
 
 function toggleIn(list: string[], id: string): string[] {
@@ -235,6 +256,54 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
       s.progress[String(issue)] = next;
       save(s);
       return next;
+    },
+    async getReaderPosition(issue) {
+      const p = load().reader?.[String(issue)];
+      if (!p || !Number.isInteger(p.page) || p.page < 1) return null;
+      return { issue, page: p.page, ...(typeof p.storyId === 'string' ? { storyId: p.storyId } : {}) };
+    },
+    async saveReaderPosition(issue, page, storyId) {
+      const s = load();
+      const next: ReaderPosition = { issue, page: Math.max(1, Math.floor(page) || 1), ...(storyId ? { storyId } : {}) };
+      s.reader = { ...s.reader, [String(issue)]: next };
+      save(s);
+      return next;
+    },
+    async listMarks(issue) {
+      const all = load().marks ?? [];
+      return issue === undefined ? [...all] : all.filter((m) => m.issue === issue);
+    },
+    async addMark(issue, page, rects, comment = '') {
+      if (!Number.isInteger(page) || page < 1) throw new Error('bad page');
+      const s = load();
+      const at = new Date(wall()).toISOString();
+      const m: PageMark = {
+        id: `M-${Math.floor(rng() * 1e9).toString(36)}${(s.marks?.length ?? 0).toString(36)}`,
+        issue,
+        page,
+        rects: cleanRects(rects),
+        comment: sanitizeText(comment, COMMENT_MAX),
+        createdAt: at,
+        updatedAt: at,
+      };
+      s.marks = [...(s.marks ?? []), m];
+      save(s);
+      return m;
+    },
+    async updateMark(id, patch) {
+      const s = load();
+      const m = (s.marks ?? []).find((x) => x.id === id);
+      if (!m) throw new Error(`unknown mark ${id}`);
+      if (patch.comment !== undefined) m.comment = sanitizeText(patch.comment, COMMENT_MAX);
+      if (patch.sentId !== undefined) m.sentId = patch.sentId;
+      m.updatedAt = new Date(wall()).toISOString();
+      save(s);
+      return { ...m };
+    },
+    async deleteMark(id) {
+      const s = load();
+      s.marks = (s.marks ?? []).filter((m) => m.id !== id);
+      save(s);
     },
     async getPoll(id) {
       return pollState(id, load());

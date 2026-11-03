@@ -72,17 +72,15 @@ for (const name of ['A', 'عبدالعزيزعبدالرحمنعبداللهال
   });
 }
 
-test('the sheet opens by itself once, after the first story is read, and never again', async ({ page }) => {
+test('the sheet stays closed after the first story is read; only the button opens it', async ({ page }) => {
   await page.goto('/ar/issue/21/musab-the-message-that-changed-the-path/');
   await page.locator('astro-island:has(.sheet-root):not([ssr])').first().waitFor({ state: 'attached' });
   await page.locator('.story-end').scrollIntoViewIfNeeded();
   await page.mouse.wheel(0, 400);
-  await expect(page.locator('.sheet-root')).toHaveAttribute('data-open', 'true');
-  await page.keyboard.press('Escape');
-  await expect(page.locator('.sheet-root')).toHaveAttribute('data-open', 'false');
-  await page.reload();
-  await page.locator('.story-end').scrollIntoViewIfNeeded();
-  await page.mouse.wheel(0, 400);
   await page.waitForTimeout(600);
   await expect(page.locator('.sheet-root')).toHaveAttribute('data-open', 'false');
+  await page.locator('astro-island:has(.me-chip):not([ssr])').first().waitFor({ state: 'attached' });
+  await page.locator('.me-chip').click();
+  await page.locator('.pop-wrap .menu-item').first().click();
+  await expect(page.locator('.sheet-root')).toHaveAttribute('data-open', 'true');
 });

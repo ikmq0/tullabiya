@@ -15,10 +15,12 @@ interface Props {
   /** Lit issues for the demo wall before the reader has history of their own. */
   demoLit?: number[];
   demoPartial?: number[];
+  /** The "k of n completed" line; off where only some of the issues are shown. */
+  note?: boolean;
 }
 
 /** Every issue as its own bar pattern; lit when the reader finished it. Server-rendered dim, states applied after hydration. */
-export default function ArchiveWall({ lang, issues, currentIssue, demoLit = [], demoPartial = [] }: Props) {
+export default function ArchiveWall({ lang, issues, currentIssue, demoLit = [], demoPartial = [], note = true }: Props) {
   const [states, setStates] = useState<Record<number, IssueState>>({});
   const profileStore = useStore($profile);
   const mounted = useMounted();
@@ -65,7 +67,7 @@ export default function ArchiveWall({ lang, issues, currentIssue, demoLit = [], 
           );
         })}
       </div>
-      <p class="arch-note">{t(lang, 'arch.note', { k: done, n: issues.length, address: profile?.address ?? 'neutral' })}</p>
+      {note && <p class="arch-note">{t(lang, 'arch.note', { k: done, n: issues.length, address: profile?.address ?? 'neutral' })}</p>}
     </>
   );
 }

@@ -3,7 +3,7 @@ import { useStore } from '@nanostores/preact';
 import { t, L } from '~/i18n';
 import { ACCENTS, accent, SECTIONS, type AccentId, type Address, type Lang, type Localized, type SectionId } from '~/lib/model';
 import { resizeAvatar, initial } from '~/lib/name';
-import { $favorites, $profile, $sheet, dismissOnboarding, hydrate, saveFavorites, saveProfile } from '~/lib/store';
+import { $favorites, $profile, $sheet, hydrate, saveFavorites, saveProfile } from '~/lib/store';
 import Star from './Star';
 
 export { Star };
@@ -15,8 +15,8 @@ interface Props {
   units: { id: string; name: Localized }[];
 }
 
-/** A bottom sheet, opened on purpose (or once by the nudge after the first read): name, photo, your
- *  color, publishers to follow, sections to pin, how to be addressed. 420ms drawer curve in, faster out. */
+/** A bottom sheet, opened only on purpose: name, photo, your color, publishers to follow, sections to
+ *  pin, how to be addressed. 420ms drawer curve in, faster out. */
 export default function Onboarding({ lang, issue, units }: Props) {
   const sheet = useStore($sheet);
   const profile = useStore($profile);
@@ -66,7 +66,6 @@ export default function Onboarding({ lang, issue, units }: Props) {
   }, [open]);
 
   function later() {
-    dismissOnboarding();
     $sheet.set(null);
   }
 
@@ -80,7 +79,6 @@ export default function Onboarding({ lang, issue, units }: Props) {
     }
     await saveProfile({ name: clean, color, address: addr, avatar });
     await saveFavorites({ sections: pins, units: follows });
-    dismissOnboarding();
     $sheet.set(null);
   }
 

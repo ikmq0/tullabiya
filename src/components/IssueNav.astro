@@ -1,0 +1,28 @@
+---
+import { t } from '~/i18n';
+import type { Lang } from '~/lib/model';
+
+interface Props {
+  lang: Lang;
+  prev: number | null;
+  next: number | null;
+  /** The link target within an issue: its reader, or its end screen. */
+  to?: 'reader' | 'end';
+}
+const { lang, prev, next, to = 'reader' } = Astro.props;
+const href = (n: number) => `/${lang}/read/${n}/${to === 'end' ? 'end/' : ''}`;
+---
+<nav class="issue-nav" aria-label={t(lang, 'read.issueNav')}>
+  {prev !== null && (
+    <a class="issue-nav-prev" href={href(prev)} rel="prev">
+      <small>{t(lang, 'read.prevIssue')}</small>
+      <strong>{t(lang, 'arch.issue', { n: prev })}</strong>
+    </a>
+  )}
+  {next !== null && (
+    <a class="issue-nav-next" href={href(next)} rel="next">
+      <small>{t(lang, 'read.nextIssue')}</small>
+      <strong>{t(lang, 'arch.issue', { n: next })}</strong>
+    </a>
+  )}
+</nav>

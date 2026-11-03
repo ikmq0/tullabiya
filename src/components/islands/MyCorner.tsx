@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
-import { t, tp, L } from '~/i18n';
+import { t, L } from '~/i18n';
 import { accent, EMPTY_FAVORITES, SECTIONS, type Lang, type Localized } from '~/lib/model';
 import { getApi } from '~/lib/api';
 import { $favorites, $profile, $sheet, $stamps, hydrate, resetAll, saveFavorites, togglePinnedSection } from '~/lib/store';
-import { LEVELS, TRACKS, levelOf, nextTier, stampId } from '~/lib/stamps';
-import { StampMark } from './StampToast';
+import { STAMP_IDS } from '~/lib/stamps';
 import { Avatar } from './ProfileChip';
 import { Star } from './Onboarding';
 import ArchiveWall from './ArchiveWall';
+import MyNotes from './MyNotes';
 import MySubmissions from './MySubmissions';
 import { useMounted } from '~/lib/useMounted';
 
@@ -20,7 +20,17 @@ interface Props {
   stories: Record<string, { title: string; url: string }>;
 }
 
-/** Everything the reader owns, on one page: profile, pins, saved, fingerprints, submissions, data. */
+/** The octagon stamp, filled in your color. */
+function StampMark({ on, size = 28 }: { on: boolean; size?: number }) {
+  return (
+    <svg class="stamp-mark" viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M8.5 2h7l6.5 6.5v7L15.5 22h-7L2 15.5v-7z" fill={on ? 'var(--me, var(--turq))' : 'none'} stroke="currentColor" stroke-width={on ? 0 : 1.8} stroke-linejoin="round" />
+      {on && <path d="M7.5 12.2l3 3 6-6.4" fill="none" stroke="var(--me-ink, var(--ink))" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />}
+    </svg>
+  );
+}
+
+/** Everything the reader owns, on one page: profile, pins, stamps, saved, fingerprints, submissions, data. */
 export default function MyCorner({ lang, issue, issues, units, stories }: Props) {
   const profileStore = useStore($profile);
   const favsStore = useStore($favorites);
@@ -29,14 +39,12 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
   const favs = mounted ? favsStore : EMPTY_FAVORITES;
   const stampsStore = useStore($stamps);
   const stamps = mounted ? stampsStore : [];
-  const [counts, setCounts] = useState<Partial<Record<string, number>>>({});
   const [saved, setSaved] = useState<string[]>([]);
   const [resetDone, setResetDone] = useState(false);
   useEffect(() => {
     hydrate(issue);
     getApi().getSaved().then(setSaved);
-    getApi().getCounts().then(setCounts);
-  }, [issue, stamps.length]);
+  }, [issue]);
 
   async function exportData() {
     const json = await getApi().exportAll();
@@ -87,49 +95,17 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
 
       <section class="my-block" aria-labelledby="my-stamps-title" id="my-stamps">
         <h2 id="my-stamps-title">{t(lang, 'my.stamps')}</h2>
-        {(() => {
-          const { level, next } = levelOf(stamps.length);
-          return (
-            <div class="level" data-level={level}>
-              <p class="level-name">{t(lang, 'my.level', { k: level, name: t(lang, `level.${level}`) })}</p>
-              <p class="pop-sub">{next === null ? t(lang, 'my.levelTop') : tp(lang, 'my.levelNext', next - stamps.length)}</p>
-              <div class="pbars" aria-hidden="true">
-                {LEVELS.map((_, i) => (
-                  <i key={i} class={`fast-bar${i < level ? ' on' : ''}`} />
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-        <p class="pop-sub">{t(lang, 'my.stampsLead')}</p>
-        <ul class="tracks">
-          {TRACKS.map((track) => {
-            const count = counts[track.id] ?? 0;
-            const upcoming = nextTier(track, count);
+        <p class="pop-sub">{t(lang, 'my.stampsLead', { k: stamps.length, n: STAMP_IDS.length })}</p>
+        <ul class="stamp-grid">
+          {STAMP_IDS.map((id) => {
+            const on = stamps.some((s) => s.id === id);
             return (
-              <li key={track.id} class="track" data-track={track.id}>
-                <div class="track-head">
-                  <b>{t(lang, `track.${track.id}.name`)}</b>
-                  <span class="pop-sub">{upcoming === null ? t(lang, 'track.allDone') : t(lang, 'track.progress', { k: count, n: upcoming })}</span>
+              <li key={id} class="stamp" data-id={id} data-on={on ? 'true' : 'false'}>
+                <StampMark on={on} size={44} />
+                <div>
+                  <b>{t(lang, `stamp.${id}.name`)}</b>
+                  <small>{t(lang, `stamp.${id}.hint`)}</small>
                 </div>
-                <ul class="stamp-row">
-                  {track.tiers.map((n, i) => {
-                    const id = stampId(track.id, n);
-                    const on = stamps.some((s) => s.id === id);
-                    const top = i === track.tiers.length - 1;
-                    const notYet = track.id === 'issues' && n > issues.length;
-                    return (
-                      <li key={id} class="stamp" data-id={id} data-on={on ? 'true' : 'false'} data-top={top ? 'true' : undefined}>
-                        <StampMark on={on} size={44} label={n} />
-                        <div>
-                          <b>{tp(lang, `track.${track.id}.tier`, n)}</b>
-                          {top && <small class="reward">{t(lang, 'stamp.reward')}</small>}
-                          {notYet && <small>{t(lang, 'stamp.notYet', { n: issues.length })}</small>}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
               </li>
             );
           })}
@@ -164,6 +140,11 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
             ))}
           </ul>
         )}
+      </section>
+
+      <section class="my-block" aria-labelledby="my-notes-title" id="my-notes">
+        <h2 id="my-notes-title">{t(lang, 'notes.title')}</h2>
+        <MyNotes lang={lang} />
       </section>
 
       <section class="my-block" aria-labelledby="my-fp">

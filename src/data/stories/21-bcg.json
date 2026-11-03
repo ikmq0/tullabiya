@@ -16,5 +16,6 @@
   "unitIds": ["srt"],
   "eventIds": ["bcg-2026-09-15"],
   "pdfPage": 8,
+  "pdfRegion": { "x": 0.045, "y": 0.645, "w": 0.465, "h": 0.14 },
   "readingMinutes": 1
 }

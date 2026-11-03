@@ -55,16 +55,55 @@ for (const lang of ['ar', 'en'] as const) {
       expect(cls).toBeLessThan(0.05);
     });
 
-    test('renders the hero, news and opportunities without JavaScript', async ({ browser }) => {
-      const ctx = await browser.newContext({ javaScriptEnabled: false });
+    test('renders the hero, news and opportunities without JavaScript', async ({ browser, baseURL }) => {
+      const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL });
       const page = await ctx.newPage();
-      await page.goto(`http://127.0.0.1:4321/${lang}/`);
+      await page.goto(`/${lang}/`);
       await expect(page.locator('h1')).toBeVisible();
       await expect(page.locator('.news h2')).toBeVisible();
       await expect(page.locator('.lead-story h3')).toBeVisible();
       await expect(page.locator('.opp h2')).toBeVisible();
       expect(await page.locator('.row').count()).toBeGreaterThan(0);
       await ctx.close();
+    });
+
+    test('every section keeps its place and its anchor on the home', async ({ page }) => {
+      await page.goto(`/${lang}/`);
+      const ids = await page.locator('main section[id]').evaluateAll((els) => els.map((e) => e.id));
+      expect(ids).toEqual(['month', 'pulse', 'news', 'hunt', 'guest', 'voices', 'opp', 'arch']);
+      await expect(page.locator('section.end')).toHaveCount(1);
+      // The reader is a choice beside the home, not its replacement.
+      await expect(page.locator('.hero-cta a').first()).toHaveAttribute('href', '#month');
+      await expect(page.locator('.hero-cta a', { hasText: lang === 'ar' ? 'اقرأ بالقارئ الرقمي' : 'Open the digital reader' })).toHaveAttribute('href', `/${lang}/read/`);
+    });
+
+    test('each section lists less: lead plus title links, compact opportunities, a small archive row', async ({ page }) => {
+      await page.goto(`/${lang}/`);
+      for (const id of ['#news', '#voices']) {
+        await expect(page.locator(`${id} article`)).toHaveCount(1);
+        await expect(page.locator(`${id} .title-links p, ${id} .title-links img, ${id} .title-links button`)).toHaveCount(0);
+        expect(await page.locator(`${id} .title-links a`).count()).toBeGreaterThan(0);
+        await expect(page.locator(`${id} .chip-wrap, ${id} .react`)).toHaveCount(0);
+      }
+      await expect(page.locator('#opp .row')).toHaveCount(3);
+      await expect(page.locator('#opp .row .acts')).toHaveCount(0);
+      await expect(page.locator('main')).not.toContainText('[object');
+      await expect(page.locator('#opp .opp-all a')).toHaveAttribute('href', `/${lang}/opportunities/`);
+      await expect(page.locator('#arch .iss')).toHaveCount(4);
+      await expect(page.locator('#arch .arch-all a')).toHaveAttribute('href', `/${lang}/archive/`);
+    });
+
+    test('says nothing first: no top band, no sheet, no favorites band; the disclosure sits by the footer', async ({ page }) => {
+      await page.goto(`/${lang}/`);
+      await page.locator('.hero astro-island:not([ssr])').first().waitFor({ state: 'attached' });
+      await page.locator('astro-island:has(.sheet-root):not([ssr])').first().waitFor({ state: 'attached' });
+      await page.waitForTimeout(400);
+      await expect(page.locator('.notice, .toast, .favs, [data-since], .live')).toHaveCount(0);
+      await expect(page.locator('.sheet-root')).toHaveAttribute('data-open', 'false');
+      await expect(page.locator('[data-sample-note]')).toContainText(lang === 'ar' ? 'نموذج أولي' : 'Prototype');
+      const note = await page.locator('[data-sample-note]').boundingBox();
+      const foot = await page.locator('.foot').boundingBox();
+      expect(note!.y + note!.height).toBeLessThanOrEqual(foot!.y + 1);
     });
   });
 }
