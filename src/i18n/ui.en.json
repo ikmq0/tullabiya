@@ -109,6 +109,7 @@
   "cal.menu": "Add to calendar",
   "cal.addAll": "Add all this month's events",
   "cal.subscribe": "Subscribe to the campus calendar",
+  "cal.vibook": "Coming soon: the calendar integrates with ViBook to show every university event in one place.",
   "cal.subscribeLead": "Updates by itself every month in your phone's calendar.",
   "cal.download": "Download the calendar file",
   "cal.grid": "Grid",

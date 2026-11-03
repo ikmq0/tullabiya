@@ -23,6 +23,7 @@ for (const u of loadAll().units) unitNames[u.id] = L(u.name, lang);
   <main id="main" class="wrap cal-page">
     <h1>{t(lang, 'month.title', { month })}</h1>
     <p class="lead">{t(lang, 'opp.lead')}</p>
+    <p class="vibook" data-vibook>{t(lang, 'cal.vibook')}</p>
     <CalendarView client:load lang={lang} issue={issue.number} year={issue.year} month={issue.month} monthLabel={month} events={events} unitNames={unitNames} feedPath={`/calendar/${lang}.ics`} />
   </main>
   <Footer lang={lang} />

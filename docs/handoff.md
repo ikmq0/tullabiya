@@ -7,8 +7,15 @@
   the prize and the closing date.
 - `src/data/community.json`: the four guest questions with their vote counts and the three kudos.
   The three previous captions are real (issue 21, page 7).
-- `src/components/islands/ProfileChip.tsx`: the three `?demo=1` students and the reading history that
-  lights archive tiles for them.
+- `src/components/islands/ProfileChip.tsx`: the three `?demo=1` students, the publishers they follow and
+  the reading history that lights archive tiles for them.
+- `src/data/units.json`: `sac`, `counsel` and `sports` are invented publishers added so following has
+  something to follow; confirm names or replace.
+- `src/data/stories/21-research-day.json`: the video story's text is placeholder written around the
+  KFUPM Research Day video; the poster frame is fetched from YouTube's image host at view time
+  (`LiteVideo.tsx`), so replace it with a local frame when the council has one.
+- "Since your last visit" (`LocalApi.visit`): the vote count that grows while the reader is away is a
+  sample drift (about seven votes an hour); a real backend reports the true difference.
 - Reaction counts are generated from each story id (`LocalApi.seedReactions`).
 - `events.json`: the `colleges` targeting of Career Talks and BCG is an editorial guess; the printed
   calendar does not say which colleges each event is for.
@@ -58,3 +65,23 @@ and the hunt's closing state.
 - `npm run check` must pass before every release: type check, 120+ unit tests, 130+ e2e tests
   (desktop and phone), axe accessibility sweep, keyboard order, lengthened-text layout, and the
   performance budget (home JS under 120 KB gzipped, hero image under 250 KB).
+
+## Batch 1 (3 Nov 2026): what the reader can do now
+
+- **Your color** replaces the college question (`Profile.color`, seven brand accents); profiles saved
+  with a college migrate on read.
+- **Follows**: publishers (`Favorites.units`) and pinned sections decide what is "for you": the strip's
+  highlighted bars, the hero count, the favorites band's list, the "لك" marks, and the "مفضلاتي فقط"
+  toggle (dims on the home, hides on list pages). Publisher chips in stories carry a follow star.
+- **The 5-minute version** is `/[lang]/quick/`: one slab per section, pinned first, a minutes-left
+  line, and `progress.digestDone` at its end.
+- **Video stories**: `Story.video` renders `LiteVideo` (poster first, player on tap).
+- **Edition rail** on the home: section name plus minutes left in the issue and in the section while
+  scrolling.
+- **Weekly clue drops**: clues open on days 1, 8 and 15 of the hunt's month (`cluesOpenOn`), never by
+  wrong answers.
+- **Since your last visit**: one line in the hero after a real break (`LocalApi.visit`).
+- **Stamps** (`src/lib/stamps.ts`): first vote, first solve, five follows, both languages, digest done,
+  three issues in a row; a toast announces one, My Corner lists them.
+- **The sheet opens by itself once**, after the first story is read, when there is no profile.
+- The calendar page says ViBook integration is coming (`cal.vibook`).

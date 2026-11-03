@@ -13,7 +13,7 @@ test('the wall shows 22 issues and the current one opens a viewer with arrow key
   await page.getByRole('button', { name: 'الصفحة السابقة' }).click();
   await expect(page.locator('.viewer-stage img')).toHaveAttribute('data-page', '1');
   await expect(page.locator('.thumb')).toHaveCount(8);
-  await expect(page.locator('.toc a')).toHaveCount(17);
+  await expect(page.locator('.toc a')).toHaveCount(18);
 });
 
 test('the PDF download responds with a PDF', async ({ page }) => {

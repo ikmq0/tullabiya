@@ -165,3 +165,14 @@
     transform: skewX(-5deg);
   }
 }
+
+/* The integration that is coming: said plainly under the lead. */
+.vibook {
+  margin-block: 10px 0;
+  padding: 8px 14px;
+  background: var(--bg2);
+  color: var(--fg);
+  font-size: var(--text-md);
+  max-inline-size: 60ch;
+  border-inline-start: 4px solid var(--yellow);
+}

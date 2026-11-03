@@ -69,3 +69,10 @@ the prototype; `docs/handoff.md` lists them.
 
 KFUPM Display is the university's own typeface (brand guide 7.1). IBM Plex Sans Arabic is under
 the SIL Open Font License, see `public/fonts/OFL-IBMPlex.txt`.
+
+## Added in batch 1 (3 Nov 2026)
+
+`src/pages/[lang]/quick.astro` (the 5-minute version), `EditionRail`, `FavoritesBand` with items and the
+`ForYouToggle`/`ForYouFilter` chips (`src/lib/foryou.ts`), `LiteVideo`, `StampToast` and `src/lib/stamps.ts`,
+weekly clue drops in `src/lib/hunt.ts`, and `LocalApi.visit` for "since your last visit". The profile
+carries a color instead of a college. See `docs/handoff.md` for the sample content these use.
