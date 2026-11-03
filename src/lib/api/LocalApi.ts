@@ -197,6 +197,7 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
         sectionsRead: Array.from(new Set([...cur.sectionsRead, ...(patch.sectionsRead ?? [])])),
         voted: patch.voted ?? cur.voted,
         huntAttempted: patch.huntAttempted ?? cur.huntAttempted,
+        digestDone: patch.digestDone ?? cur.digestDone,
       };
       s.progress[String(issue)] = next;
       save(s);

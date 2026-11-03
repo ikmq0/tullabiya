@@ -19,7 +19,7 @@ const month = monthName(lang, issue.year, issue.month);
     <HeroGreeting client:load lang={lang} issue={issue.number} month={month} totalEvents={events.length} eventUnits={eventUnits} />
     <div class="hero-cta">
       <a class="btn on-field" href="#month">{t(lang, 'hero.start')}</a>
-      <a class="btn ghost on-field" href="#pulse">{t(lang, 'hero.quick')}</a>
+      <a class="btn ghost on-field" href={`/${lang}/quick/`}>{t(lang, 'hero.quick')}</a>
     </div>
   </div>
   <div class="hero-photo fast-photo" style="--slant: 96px">

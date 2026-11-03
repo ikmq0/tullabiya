@@ -7,6 +7,8 @@ export interface IssueProgress {
   sectionsRead: SectionId[];
   voted: boolean;
   huntAttempted: boolean;
+  /** The 5-minute version was read to its end. */
+  digestDone?: boolean;
 }
 
 export interface PollOptionState {

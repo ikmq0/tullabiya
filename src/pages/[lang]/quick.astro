@@ -1,0 +1,136 @@
+---
+import '~/styles/quick.css';
+import Base from '~/layouts/Base.astro';
+import TopBar from '~/components/TopBar.astro';
+import Footer from '~/components/Footer.astro';
+import Onboarding from '~/components/islands/Onboarding';
+import PulsePoll from '~/components/islands/PulsePoll';
+import OpportunityRow from '~/components/islands/OpportunityRow';
+import QuickRun from '~/components/islands/QuickRun';
+import { currentIssue, eventsInMonth, loadAll, personById, storiesOf, unitById } from '~/data';
+import { L, monthName, t, tp, weekdayName } from '~/i18n';
+import { DEMO_TODAY } from '~/lib/clock';
+import { mailto } from '~/lib/entities';
+import { toIcsEvent } from '~/lib/ics';
+import { SECTIONS, type Lang, type SectionId } from '~/lib/model';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'ar' } }, { params: { lang: 'en' } }];
+}
+const lang = Astro.params.lang as Lang;
+const bundle = loadAll();
+const unitList = bundle.units.map((u) => ({ id: u.id, name: u.name }));
+const issue = currentIssue();
+const stories = storiesOf(issue.number);
+const events = eventsInMonth(issue.year, issue.month);
+const lead = stories.find((s) => s.id === issue.leadStoryId)!;
+const big = stories.find((s) => s.section === 'experience')!;
+const guestStory = stories.find((s) => s.section === 'guest');
+const guest = personById(issue.guestId);
+const funPoll = bundle.polls.find((p) => p.kind === 'fun' && p.issue === issue.number)!;
+const hunt = bundle.hunts.find((h) => h.issue === issue.number)!;
+const month = monthName(lang, issue.year, issue.month);
+const TODAY = DEMO_TODAY ?? new Date().toISOString().slice(0, 10);
+const t0 = new Date(`${TODAY}T12:00:00+03:00`).getTime();
+const opp = events
+  .filter((e) => e.opportunity)
+  .map((e) => ({ e, daysLeft: Math.round((new Date(`${e.start.slice(0, 10)}T12:00:00+03:00`).getTime() - t0) / 86_400_000) }))
+  .filter((x) => x.daysLeft >= 0)
+  .sort((a, b) => a.e.start.localeCompare(b.e.start))[0];
+const oppUnit = opp ? unitById(opp.e.unitId) : null;
+const href = (s: { issue: number; slug: string }) => `/${lang}/issue/${s.issue}/${s.slug}/`;
+const sectionName = (id: SectionId) => L(SECTIONS.find((s) => s.id === id)!.name, lang);
+/** Minutes a slab takes; six slabs make the five minutes. */
+const MIN = 0.8;
+const title = t(lang, 'quick.title');
+---
+<Base lang={lang} title={`${title} | ${t(lang, 'site.name')}`} description={t(lang, 'quick.lead')}>
+  <TopBar lang={lang} issue={issue.number} current="home" />
+  <main id="main" class="wrap quick-page">
+    <header class="quick-head">
+      <h1>{title}</h1>
+      <p class="lead">{t(lang, 'quick.lead', { issue: issue.number, month })}</p>
+      <QuickRun client:load lang={lang} issue={issue.number} listSelector="[data-quick-list]" />
+    </header>
+
+    <div class="quick-list" data-quick-list>
+      <article class="qs" data-section="news" data-min={MIN}>
+        <p class="qs-kind">{sectionName('news')}</p>
+        <h2><a href={href(lead)}>{L(lead.title, lang)}</a></h2>
+        <p>{L(lead.summary, lang)}</p>
+        <div class="act-row">
+          <a class="btn sm" href={href(lead)}>{t(lang, 'quick.readFull')}</a>
+          <span class="qs-min">{tp(lang, 'voices.minutes', lead.readingMinutes)}</span>
+        </div>
+      </article>
+
+      <article class="qs" data-section="last" data-min={MIN}>
+        <p class="qs-kind">{t(lang, 'nav.pulse')}</p>
+        <h2>{L(funPoll.question, lang)}</h2>
+        <PulsePoll
+          client:load
+          lang={lang}
+          issue={issue.number}
+          pollId={funPoll.id}
+          options={funPoll.options.map((o) => ({ id: o.id, label: L(o.label, lang) }))}
+        />
+      </article>
+
+      <article class="qs qs-hunt" data-section="last" data-min={MIN}>
+        <p class="qs-kind">{t(lang, 'hunt.title', { month })}</p>
+        <h2 class="riddle">{L(hunt.riddle, lang)}</h2>
+        <div class="act-row">
+          <a class="btn sm" href={`/${lang}/#hunt`}>{t(lang, 'quick.solve')}</a>
+          <span class="qs-min">{L(hunt.prize, lang)}</span>
+        </div>
+      </article>
+
+      <article class="qs" data-section="guest" data-min={MIN}>
+        <p class="qs-kind">{sectionName('guest')}</p>
+        <h2>{guest ? guest.name[lang] ?? guest.name.ar : ''}</h2>
+        {guestStory?.quote && <p class="qs-quote">«{L(guestStory.quote, lang)}»</p>}
+        <div class="act-row">
+          {guestStory && <a class="btn sm" href={href(guestStory)}>{t(lang, 'quick.readFull')}</a>}
+          <a class="btn sm ghost" href={`/${lang}/community/#ask`}>{t(lang, 'quick.ask')}</a>
+        </div>
+      </article>
+
+      <article class="qs" data-section="experience" data-min={MIN}>
+        <p class="qs-kind">{sectionName('experience')}</p>
+        <h2><a href={href(big)}>{L(big.title, lang)}</a></h2>
+        <p>{L(big.summary, lang)}</p>
+        <div class="act-row">
+          <a class="btn sm" href={href(big)}>{t(lang, 'quick.readFull')}</a>
+          <span class="qs-min">{tp(lang, 'voices.minutes', big.readingMinutes)}</span>
+        </div>
+      </article>
+
+      {opp && oppUnit && (
+        <article class="qs qs-opp" data-section="contributions" data-min={MIN}>
+          <p class="qs-kind">{t(lang, 'opp.title')}</p>
+          <OpportunityRow
+            client:load
+            lang={lang}
+            event={toIcsEvent(opp.e)}
+            eventId={opp.e.id}
+            unitId={opp.e.unitId}
+            day={Number(opp.e.start.slice(8, 10))}
+            weekday={weekdayName(lang, opp.e.start)}
+            title={L(opp.e.title, lang)}
+            organizer={L(oppUnit.name, lang)}
+            askHref={mailto(oppUnit.email ?? 'dsa-mag@kfupm.edu.sa', L(opp.e.title, lang))}
+            daysLeft={opp.daysLeft}
+            startIso={opp.e.start.slice(0, 10)}
+          />
+        </article>
+      )}
+
+      <div class="quick-end" data-quick-end>
+        <p class="quick-end-line">{t(lang, 'quick.endLine')}</p>
+        <a class="btn" href={`/${lang}/`}>{t(lang, 'quick.full')}</a>
+      </div>
+    </div>
+  </main>
+  <Onboarding client:idle lang={lang} issue={issue.number} units={unitList} />
+  <Footer lang={lang} />
+</Base>

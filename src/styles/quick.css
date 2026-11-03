@@ -1,0 +1,127 @@
+/* The 5-minute version: one slab per section, the minutes-left line pinned under the top bar. */
+.quick-page {
+  padding-block: clamp(28px, 4vw, 56px) var(--gap);
+  max-inline-size: 880px;
+  margin-inline: auto;
+}
+.quick-head h1 {
+  font-size: var(--h2);
+  margin-block-end: 8px;
+}
+.quick-head .lead {
+  color: var(--fg2);
+  max-inline-size: 52ch;
+}
+.quick-line {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  margin-block-start: 18px;
+  padding: 10px 16px;
+  background: var(--yellow);
+  color: var(--on-yellow);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+  min-block-size: 48px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+[dir='ltr'] .quick-line {
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
+}
+.quick-line[data-done='true'][data-left='0'] {
+  background: var(--green);
+  color: var(--white);
+}
+.quick-list {
+  display: grid;
+  gap: 18px;
+  margin-block-start: 28px;
+}
+.qs {
+  background: var(--bg2);
+  padding: clamp(20px, 3vw, 36px);
+  border-inline-start: 8px solid var(--turq);
+}
+.qs:nth-child(even) {
+  border-inline-start-color: var(--me, var(--green));
+}
+.qs-kind {
+  color: var(--fg2);
+  font-size: var(--text-sm);
+  margin-block-end: 6px;
+}
+.qs h2 {
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.125rem);
+  margin-block-end: 10px;
+}
+.qs h2 a {
+  text-decoration: none;
+}
+.qs > p {
+  color: var(--fg2);
+  margin-block-end: 16px;
+}
+.qs .riddle {
+  font-weight: 700;
+  line-height: 1.5;
+  max-inline-size: 30ch;
+}
+.qs-quote {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--h3);
+  line-height: 1.5;
+  color: var(--fg);
+}
+.qs .act-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.qs-min {
+  color: var(--fg2);
+  font-size: var(--text-sm);
+}
+.qs-opp .row {
+  padding: 0;
+  background: transparent;
+}
+.qs .opts {
+  margin-block-start: 6px;
+}
+.quick-end {
+  margin-block-start: 24px;
+  padding: clamp(24px, 4vw, 40px);
+  background: var(--turq);
+  color: var(--beige);
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+.quick-end-line {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--h3);
+  line-height: 1.3;
+  max-inline-size: 26ch;
+}
+.quick-end .btn {
+  background: var(--beige);
+  color: var(--ink);
+}
+@media (hover: hover) and (pointer: fine) {
+  .qs h2 a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-decoration-color: var(--me, var(--turq));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quick-line {
+    transition: none;
+  }
+}
