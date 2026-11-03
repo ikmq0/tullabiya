@@ -1884,3 +1884,114 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
     background: color-mix(in oklab, var(--yellow) 88%, var(--paper));
   }
 }
+
+/* ---------- edition rail: where you are, at the page's edge ---------- */
+.rail {
+  position: fixed;
+  inset-inline-end: 10px;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+}
+.rail[data-shown='true'] {
+  opacity: 0.55;
+}
+.rail[data-active='true'] {
+  opacity: 1;
+}
+.rail-notches {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  block-size: min(46vh, 360px);
+  inline-size: 8px;
+}
+.rail-notch {
+  display: block;
+  flex: 1 1 0;
+  min-block-size: 10px;
+  background: var(--bar);
+  transform: skewY(-5deg);
+  transition: background-color 200ms ease;
+}
+.rail-notch.past {
+  background: var(--fg2);
+}
+.rail-notch.now {
+  background: var(--me, var(--turq));
+}
+.rail-label {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  text-align: end;
+  padding: 8px 12px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+[dir='rtl'] .rail-label {
+  transform: translateX(-4px);
+}
+.rail-label b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-md);
+}
+.rail[data-active='true'] .rail-label {
+  opacity: 1;
+  transform: none;
+}
+@media (max-width: 900px) {
+  .rail {
+    inset-inline: 0;
+    inset-block-start: auto;
+    inset-block-end: 0;
+    transform: none;
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 0;
+  }
+  .rail-notches {
+    flex-direction: row;
+    block-size: 6px;
+    inline-size: 100%;
+    gap: 2px;
+  }
+  .rail-notch {
+    min-block-size: 0;
+    min-inline-size: 6px;
+    transform: skewX(-5deg);
+  }
+  .rail-label {
+    justify-items: start;
+    text-align: start;
+    padding: 8px var(--gutter);
+    transform: translateY(4px);
+    white-space: normal;
+  }
+  [dir='rtl'] .rail-label {
+    transform: translateY(4px);
+  }
+  .rail[data-active='true'] .rail-label {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail,
+  .rail-label,
+  .rail-notch {
+    transition: none;
+  }
+}

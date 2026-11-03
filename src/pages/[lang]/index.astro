@@ -8,6 +8,7 @@ import OpportunitiesBlock from '~/components/OpportunitiesBlock.astro';
 import ArchiveTeaser from '~/components/ArchiveTeaser.astro';
 import Footer from '~/components/Footer.astro';
 import FavoritesBand, { type FavItem } from '~/components/islands/FavoritesBand';
+import EditionRail, { type RailSection } from '~/components/islands/EditionRail';
 import EndOfIssue from '~/components/islands/EndOfIssue';
 import Onboarding from '~/components/islands/Onboarding';
 import MonthStrip from '~/components/islands/MonthStrip';
@@ -55,6 +56,18 @@ const favItems: FavItem[] = [
   ...events.map((e) => ({ kind: 'event' as const, id: e.id, title: L(e.title, lang), meta: formatDate(lang, e.start.slice(0, 10)), href: `/${lang}/calendar/`, unitId: e.unitId })),
 ];
 const nextDate = formatDate(lang, nextIssueDate(issue.date));
+const minutesOf = (list: { readingMinutes: number }[]) => list.reduce((a, s) => a + s.readingMinutes, 0);
+/** Minutes per section for the edition rail: stories by their reading time, interactive blocks by a fixed guess. */
+const railSections: RailSection[] = [
+  { id: 'month', label: t(lang, 'nav.calendar'), selector: '#month', minutes: 1 },
+  { id: 'pulse', label: t(lang, 'nav.pulse'), selector: '#pulse', minutes: 1 },
+  { id: 'news', label: t(lang, 'news.title'), selector: '#news', minutes: minutesOf([lead, ...newsSide]) },
+  { id: 'hunt', label: t(lang, 'nav.hunt'), selector: '#hunt', minutes: 2 },
+  { id: 'guest', label: L(SECTIONS.find((s) => s.id === 'guest')!.name, lang), selector: '#guest', minutes: 3 },
+  { id: 'voices', label: t(lang, 'voices.title'), selector: '#voices', minutes: minutesOf([big, ...voicesSide]) },
+  { id: 'opp', label: t(lang, 'nav.opportunities'), selector: '#opp', minutes: 1 },
+  { id: 'arch', label: t(lang, 'nav.archive'), selector: '#arch', minutes: 1 },
+];
 const unitNames: Record<string, string> = {};
 const contactHrefs: Record<string, string> = {};
 for (const u of bundle.units) {
@@ -165,6 +178,7 @@ const description = `${L(issue.coverLine, lang)}. ${L(lead.summary, lang)}`;
     <VoicesBlock lang={lang} big={big} side={voicesSide} />
     <OpportunitiesBlock lang={lang} events={events} today={TODAY} limit={3} />
     <ArchiveTeaser lang={lang} issues={bundle.archive.map((a) => a.number).sort((a, b) => b - a)} currentIssue={issue.number} />
+    <EditionRail client:idle lang={lang} sections={railSections} />
     <EndOfIssue client:visible lang={lang} issue={issue.number} nextDate={nextDate} sectionCount={SECTIONS.length} />
   </main>
   <Footer lang={lang} />

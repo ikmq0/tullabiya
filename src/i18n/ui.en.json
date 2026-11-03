@@ -33,6 +33,7 @@
   "hero.quick": "The 5-minute version",
   "hero.personalize": "Make this issue yours",
   "foryou.only": "My favorites only",
+  "rail.left": "{n} min left in the issue · {m} min in this section",
   "quick.title": "The 5-minute version",
   "quick.lead": "What matters from issue {issue}, {month}, in five minutes. Your pinned sections first, one action each.",
   "quick.left": {"zero": "The five minutes are up", "one": "1 minute left", "other": "{n} minutes left"},

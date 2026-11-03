@@ -23,7 +23,7 @@ const unitChip = (unitId: string, subject: string) => {
 const leadUnit = unitChip(lead.unitIds[0], L(lead.title, lang));
 const leadPhotos = (lead.photos ?? [lead.photo]).filter(hasPhoto).slice(0, 3);
 ---
-<section class="news sec" aria-labelledby="news-title">
+<section class="news sec" id="news" aria-labelledby="news-title">
   <div class="wrap">
     <h2 id="news-title">{t(lang, 'news.title')}</h2>
     <div class="news-grid">
