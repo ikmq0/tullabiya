@@ -39,6 +39,7 @@ test('the opportunities page hides rows outside your favorites when the toggle i
   await persona(page);
   await page.goto('/ar/opportunities/');
   await hydrated(page, '.opp');
+  await hydrated(page, '.chip.foryou');
   const rows = page.locator('.opp .row');
   const all = await rows.count();
   expect(all).toBeGreaterThan(3);
