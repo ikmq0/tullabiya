@@ -24,9 +24,10 @@ test('finishing the issue lights its tile and shows the end of issue', async ({ 
   await page.locator('.opt.a').click();
   await page.locator('#hunt').scrollIntoViewIfNeeded();
   await hydrated(page, '.hunt');
-  await page.locator('#hunt-answer').fill('x');
-  await page.locator('.answer button').click();
-  await expect(page.locator('.hunt-msg')).toContainText('ليست');
+  await page.locator('.hunt .found').click();
+  await page.locator('#hunt-name').fill('سارة');
+  await page.locator('.hunt .claim button[type="submit"]').click();
+  await expect(page.locator('[data-winner]')).toContainText('سارة');
   await page.locator('section.end').scrollIntoViewIfNeeded();
   await expect(page.locator('section.end')).toHaveAttribute('data-done', 'true');
   await expect(page.locator('section.end')).toContainText('نهاية العدد');

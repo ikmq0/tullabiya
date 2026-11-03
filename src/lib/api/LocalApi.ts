@@ -10,7 +10,7 @@ import { COMMUNITY, HUNTS, POLLS } from '~/data/interactive';
 import { breakdownVisible, tally } from '~/lib/poll';
 import { emptyProgress } from '~/lib/progress';
 import { cluesOpenOn, makeCode, matchesAnswer } from '~/lib/hunt';
-import { dueStamps, type Stamp } from '~/lib/stamps';
+import { dueStamps, type Stamp, type StampFacts } from '~/lib/stamps';
 import { issueState } from '~/lib/progress';
 import { sanitizeText } from '~/lib/sanitize';
 import { COMMENT_MAX } from '~/lib/notes';
@@ -19,6 +19,7 @@ interface HuntUserState {
   attempts: number[];
   clueIndex: number;
   solved?: HuntSolved;
+  winner?: { name: string; at: string; code: string };
 }
 
 interface State {
@@ -123,17 +124,20 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
     return f;
   }
   /** Awards whatever the state now earns; stamps are never taken back. */
+  function facts(s: State): StampFacts {
+    return {
+      issues: Object.values(s.progress).filter((p) => issueState(p) === 'complete').length,
+      votes: Object.keys(s.votes).length,
+      hunts: Object.values(s.hunts).filter((h) => !!h.solved).length,
+      follows: s.favorites.units.length,
+      digests: Object.values(s.progress).filter((p) => !!p.digestDone).length,
+      langs: s.lastVisit?.langs.length ?? 0,
+    };
+  }
   function settle(s: State): Stamp[] {
     const have = s.stamps ?? [];
     const got = new Set(have.map((x) => x.id));
-    const due = dueStamps({
-      voted: Object.keys(s.votes).length > 0,
-      solved: Object.values(s.hunts).some((h) => !!h.solved),
-      follows: s.favorites.units.length,
-      langs: s.lastVisit?.langs.length ?? 0,
-      digestDone: Object.values(s.progress).some((p) => !!p.digestDone),
-      completeIssues: Object.values(s.progress).filter((p) => issueState(p) === 'complete').map((p) => p.issue),
-    });
+    const due = dueStamps(facts(s));
     const at = new Date(wall()).toISOString();
     s.stamps = [...have, ...due.filter((id) => !got.has(id)).map((id) => ({ id, at }))];
     return s.stamps;
@@ -196,6 +200,7 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
       firstSeats: h.firstSeats,
       drawSeats: h.drawSeats,
       solved: u.solved,
+      winner: u.winner,
     };
   }
 
@@ -372,6 +377,24 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
       save(s);
       return { ok: false, reason: 'wrong', state: huntState(id, s) };
     },
+    async claimFound(id, name) {
+      const s = load();
+      const h = huntDef(id);
+      const u = huntUser(s, id);
+      const st = huntState(id, s);
+      if (u.winner) return { ok: false, reason: 'found', state: st };
+      if (st.closed) return { ok: false, reason: 'closed', state: st };
+      const clean = sanitizeText(name, 60);
+      if (!clean) return { ok: false, reason: 'empty', state: st };
+      const at = new Date(now()).toISOString();
+      const code = makeCode(rng);
+      u.winner = { name: clean, at, code };
+      u.solved = { rank: 1, seat: 'first', code, at };
+      const cur = s.progress[String(h.issue)] ?? emptyProgress(h.issue);
+      s.progress[String(h.issue)] = { ...cur, huntAttempted: true };
+      save(s);
+      return { ok: true, state: huntState(id, s) };
+    },
     async getReactions(storyId) {
       return reactionState(storyId, load());
     },
@@ -442,6 +465,9 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
     },
     async getStamps() {
       return settle(load());
+    },
+    async getCounts() {
+      return facts(load());
     },
     async getRegistrations() {
       return [...load().registrations];
