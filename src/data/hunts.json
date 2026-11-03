@@ -2,11 +2,34 @@
   {
     "id": "hunt-21",
     "issue": 21,
-    "riddle": { "ar": "خمسة أحرف ضخمة تطلّ على الطريق، وعندها يلتقط الجميع صورتهم الأولى. أين هي؟", "en": "Five huge letters look over the road, and everyone takes their first photo there. Where are they?", "enStatus": "machine" },
+    "riddle": {
+      "ar": "شعار الجامعة مخبّأ في مكان ما في الحرم هذا الشهر. كل أسبوع تلميح جديد عن مكانه، ومن يجده أولاً يأخذه إلى مكتب شؤون الطلاب.",
+      "en": "A KFUPM logo is hidden somewhere on campus this month. A new hint about where every week; whoever finds it first takes it to the Student Affairs office.",
+      "enStatus": "machine"
+    },
     "clues": [
-      { "text": { "ar": "ابدأ من الصفحة الأخيرة في العدد المطبوع.", "en": "Start from the last page of the printed issue.", "enStatus": "machine" } },
-      { "text": { "ar": "جزء من الصورة يكفي.", "en": "Part of the photo is enough.", "enStatus": "machine" }, "photo": "kfupm-sign" },
-      { "text": { "ar": "تراها من الطريق قبل أن تصل إلى البوابة.", "en": "You see it from the road before you reach the gate.", "enStatus": "machine" } }
+      {
+        "text": {
+          "ar": "في مبنى تمرّ به كل يوم ولا تدخله دائماً.",
+          "en": "In a building you pass every day and do not always enter.",
+          "enStatus": "machine"
+        }
+      },
+      {
+        "text": {
+          "ar": "قريب من المكان الذي يلتقط فيه المستجدون صورتهم الأولى.",
+          "en": "Near the spot where freshmen take their first photo.",
+          "enStatus": "machine"
+        },
+        "photo": "kfupm-sign"
+      },
+      {
+        "text": {
+          "ar": "على ارتفاع نظرك، خلف شيء يُفتح.",
+          "en": "At eye level, behind something that opens.",
+          "enStatus": "machine"
+        }
+      }
     ],
     "answers": [
       "KFUPM",
@@ -28,7 +51,11 @@
       "KFUPM hill"
     ],
     "closesAt": "2026-09-20T23:59:00+03:00",
-    "prize": { "ar": "قهوة على حساب العمادة", "en": "Coffee on the Deanship", "enStatus": "machine" },
+    "prize": {
+      "ar": "قهوة على حساب العمادة",
+      "en": "Coffee on the Deanship",
+      "enStatus": "machine"
+    },
     "firstSeats": 10,
     "drawSeats": 5,
     "seedTaken": 7,
