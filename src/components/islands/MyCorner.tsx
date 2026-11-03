@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useStore } from '@nanostores/preact';
-import { t, L } from '~/i18n';
+import { t, tp, L } from '~/i18n';
 import { accent, EMPTY_FAVORITES, SECTIONS, type Lang, type Localized } from '~/lib/model';
 import { getApi } from '~/lib/api';
 import { $favorites, $profile, $sheet, $stamps, hydrate, resetAll, saveFavorites, togglePinnedSection } from '~/lib/store';
-import { STAMP_IDS } from '~/lib/stamps';
+import { LEVELS, TRACKS, levelOf, nextTier, stampId } from '~/lib/stamps';
 import { StampMark } from './StampToast';
 import { Avatar } from './ProfileChip';
 import { Star } from './Onboarding';
@@ -29,12 +29,14 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
   const favs = mounted ? favsStore : EMPTY_FAVORITES;
   const stampsStore = useStore($stamps);
   const stamps = mounted ? stampsStore : [];
+  const [counts, setCounts] = useState<Partial<Record<string, number>>>({});
   const [saved, setSaved] = useState<string[]>([]);
   const [resetDone, setResetDone] = useState(false);
   useEffect(() => {
     hydrate(issue);
     getApi().getSaved().then(setSaved);
-  }, [issue]);
+    getApi().getCounts().then(setCounts);
+  }, [issue, stamps.length]);
 
   async function exportData() {
     const json = await getApi().exportAll();
@@ -85,17 +87,49 @@ export default function MyCorner({ lang, issue, issues, units, stories }: Props)
 
       <section class="my-block" aria-labelledby="my-stamps-title" id="my-stamps">
         <h2 id="my-stamps-title">{t(lang, 'my.stamps')}</h2>
-        <p class="pop-sub">{t(lang, 'my.stampsLead', { k: stamps.length, n: STAMP_IDS.length })}</p>
-        <ul class="stamp-grid">
-          {STAMP_IDS.map((id) => {
-            const on = stamps.some((s) => s.id === id);
+        {(() => {
+          const { level, next } = levelOf(stamps.length);
+          return (
+            <div class="level" data-level={level}>
+              <p class="level-name">{t(lang, 'my.level', { k: level, name: t(lang, `level.${level}`) })}</p>
+              <p class="pop-sub">{next === null ? t(lang, 'my.levelTop') : tp(lang, 'my.levelNext', next - stamps.length)}</p>
+              <div class="pbars" aria-hidden="true">
+                {LEVELS.map((_, i) => (
+                  <i key={i} class={`fast-bar${i < level ? ' on' : ''}`} />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+        <p class="pop-sub">{t(lang, 'my.stampsLead')}</p>
+        <ul class="tracks">
+          {TRACKS.map((track) => {
+            const count = counts[track.id] ?? 0;
+            const upcoming = nextTier(track, count);
             return (
-              <li key={id} class="stamp" data-id={id} data-on={on ? 'true' : 'false'}>
-                <StampMark on={on} size={44} />
-                <div>
-                  <b>{t(lang, `stamp.${id}.name`)}</b>
-                  <small>{t(lang, `stamp.${id}.hint`)}</small>
+              <li key={track.id} class="track" data-track={track.id}>
+                <div class="track-head">
+                  <b>{t(lang, `track.${track.id}.name`)}</b>
+                  <span class="pop-sub">{upcoming === null ? t(lang, 'track.allDone') : t(lang, 'track.progress', { k: count, n: upcoming })}</span>
                 </div>
+                <ul class="stamp-row">
+                  {track.tiers.map((n, i) => {
+                    const id = stampId(track.id, n);
+                    const on = stamps.some((s) => s.id === id);
+                    const top = i === track.tiers.length - 1;
+                    const notYet = track.id === 'issues' && n > issues.length;
+                    return (
+                      <li key={id} class="stamp" data-id={id} data-on={on ? 'true' : 'false'} data-top={top ? 'true' : undefined}>
+                        <StampMark on={on} size={44} label={n} />
+                        <div>
+                          <b>{tp(lang, `track.${track.id}.tier`, n)}</b>
+                          {top && <small class="reward">{t(lang, 'stamp.reward')}</small>}
+                          {notYet && <small>{t(lang, 'stamp.notYet', { n: issues.length })}</small>}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </li>
             );
           })}

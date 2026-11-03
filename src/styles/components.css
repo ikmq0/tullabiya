@@ -2162,3 +2162,59 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
   font-weight: 900;
   font-size: var(--h3);
 }
+
+/* ---------- milestones: level, tracks ---------- */
+.level {
+  margin-block-end: 18px;
+}
+.level-name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--h3);
+}
+.level .pbars {
+  margin-block-start: 8px;
+  max-inline-size: 240px;
+}
+.tracks {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+  margin-block-start: 14px;
+}
+.track-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-block-end: 8px;
+}
+.track-head b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+}
+.stamp-row {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+.stamp-row .stamp {
+  padding: 10px 12px;
+  gap: 10px;
+  align-items: flex-start;
+}
+.stamp-row .stamp b {
+  font-size: var(--text-md);
+}
+.stamp .reward {
+  color: var(--fg);
+  font-weight: 500;
+}
+.stamp-mark text {
+  font-family: var(--font-display);
+}

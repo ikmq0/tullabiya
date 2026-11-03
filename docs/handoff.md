@@ -81,7 +81,10 @@ and the hunt's closing state.
 - **Weekly clue drops**: clues open on days 1, 8 and 15 of the hunt's month (`cluesOpenOn`), never by
   wrong answers.
 - **Since your last visit**: one line in the hero after a real break (`LocalApi.visit`).
-- **Stamps** (`src/lib/stamps.ts`): first vote, first solve, five follows, both languages, digest done,
-  three issues in a row; a toast announces one, My Corner lists them.
+- **Milestones** (`src/lib/stamps.ts`): six tracks with tiers that stay ahead of the reader (issues completed
+  1/3/10/30/50, votes 1/10/30, treasures found 1/3/10, publishers followed 1/5/10, 5-minute versions 1/10/30,
+  languages 2); each tier is a stamp, the top tier of every track says the first to earn it is rewarded by
+  the Deanship, and a level (1–5) grows with the stamp count. A toast announces a new stamp; My Corner shows
+  the level, each track's progress and the stamps.
 - **The sheet opens by itself once**, after the first story is read, when there is no profile.
 - The calendar page says ViBook integration is coming (`cal.vibook`).

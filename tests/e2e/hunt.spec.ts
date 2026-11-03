@@ -33,7 +33,7 @@ test('"I found it" takes a name, names the winner with a pickup code, and surviv
   await expect(page.locator('[data-winner]')).toContainText('نورة العتيبي');
   await expect(page.locator('[data-code]')).toHaveText(/^KFUPM-[A-Z]{4}$/);
   const code = await page.locator('[data-code]').textContent();
-  await expect(page.locator('.toast[data-open="true"]')).toHaveAttribute('data-stamp', 'first-solve');
+  await expect(page.locator('.toast[data-open="true"]')).toHaveAttribute('data-stamp', 'hunts-1');
   await page.reload();
   await ready(page);
   await expect(page.locator('[data-winner]')).toContainText('نورة العتيبي');

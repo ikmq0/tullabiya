@@ -247,12 +247,12 @@ describe('visits', () => {
 });
 
 describe('stamps', () => {
-  it('the first vote earns first-vote, kept across instances; nothing twice', async () => {
+  it('the first vote earns votes-1, kept across instances; nothing twice', async () => {
     const storage = memoryStorage();
     expect(await make(storage).getStamps()).toEqual([]);
     await make(storage).vote('p-small', 'a');
     const got = await make(storage).getStamps();
-    expect(got.map((s) => s.id)).toEqual(['first-vote']);
+    expect(got.map((s) => s.id)).toEqual(['votes-1']);
     await make(storage).vote('p-small', 'a');
     expect((await make(storage).getStamps()).length).toBe(1);
   });
@@ -270,11 +270,23 @@ describe('claimFound', () => {
     expect(again.ok).toBe(false);
     expect(again.reason).toBe('found');
     expect((await api.getHunt('h')).winner?.name).toBe('نورة');
-    expect((await api.getStamps()).map((s) => s.id)).toContain('first-solve');
+    expect((await api.getStamps()).map((s) => s.id)).toContain('hunts-1');
   });
   it('an empty name claims nothing', async () => {
     const r = await make().claimFound('h', '   ');
     expect(r.reason).toBe('empty');
     expect(r.state.winner).toBeUndefined();
+  });
+});
+
+describe('counts', () => {
+  it('reports the numbers behind the tracks', async () => {
+    const api = make();
+    await api.vote('p-small', 'a');
+    await api.claimFound('h', 'ريم');
+    const c = await api.getCounts();
+    expect(c.votes).toBe(1);
+    expect(c.hunts).toBe(1);
+    expect(c.issues).toBe(0);
   });
 });

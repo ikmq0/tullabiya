@@ -9,7 +9,7 @@ import { COMMUNITY, HUNTS, POLLS } from '~/data/interactive';
 import { breakdownVisible, tally } from '~/lib/poll';
 import { emptyProgress } from '~/lib/progress';
 import { cluesOpenOn, makeCode, matchesAnswer } from '~/lib/hunt';
-import { dueStamps, type Stamp } from '~/lib/stamps';
+import { dueStamps, type Stamp, type StampFacts } from '~/lib/stamps';
 import { issueState } from '~/lib/progress';
 import { sanitizeText } from '~/lib/sanitize';
 
@@ -103,17 +103,20 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
     return f;
   }
   /** Awards whatever the state now earns; stamps are never taken back. */
+  function facts(s: State): StampFacts {
+    return {
+      issues: Object.values(s.progress).filter((p) => issueState(p) === 'complete').length,
+      votes: Object.keys(s.votes).length,
+      hunts: Object.values(s.hunts).filter((h) => !!h.solved).length,
+      follows: s.favorites.units.length,
+      digests: Object.values(s.progress).filter((p) => !!p.digestDone).length,
+      langs: s.lastVisit?.langs.length ?? 0,
+    };
+  }
   function settle(s: State): Stamp[] {
     const have = s.stamps ?? [];
     const got = new Set(have.map((x) => x.id));
-    const due = dueStamps({
-      voted: Object.keys(s.votes).length > 0,
-      solved: Object.values(s.hunts).some((h) => !!h.solved),
-      follows: s.favorites.units.length,
-      langs: s.lastVisit?.langs.length ?? 0,
-      digestDone: Object.values(s.progress).some((p) => !!p.digestDone),
-      completeIssues: Object.values(s.progress).filter((p) => issueState(p) === 'complete').map((p) => p.issue),
-    });
+    const due = dueStamps(facts(s));
     const at = new Date(wall()).toISOString();
     s.stamps = [...have, ...due.filter((id) => !got.has(id)).map((id) => ({ id, at }))];
     return s.stamps;
@@ -393,6 +396,9 @@ export function createLocalApi(deps: LocalApiDeps = {}): Api {
     },
     async getStamps() {
       return settle(load());
+    },
+    async getCounts() {
+      return facts(load());
     },
     async getRegistrations() {
       return [...load().registrations];

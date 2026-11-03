@@ -33,7 +33,7 @@ export interface HuntSolved {
   at: string;
 }
 
-import type { Stamp } from '~/lib/stamps';
+import type { Stamp, StampFacts } from '~/lib/stamps';
 
 export interface VisitDelta {
   first: boolean;
@@ -108,6 +108,8 @@ export interface Api {
   visit(issue: number, lang: string): Promise<VisitDelta>;
   /** Stamps earned so far, oldest first. */
   getStamps(): Promise<Stamp[]>;
+  /** What the reader has done, as counts per track (the numbers behind the stamps). */
+  getCounts(): Promise<StampFacts>;
   getRegistrations(): Promise<string[]>;
   toggleRegistration(eventId: string): Promise<string[]>;
   getReminders(): Promise<string[]>;
