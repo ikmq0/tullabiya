@@ -43,15 +43,6 @@
 .qs {
   background: var(--bg2);
   padding: clamp(20px, 3vw, 36px);
-  border-inline-start: 8px solid var(--turq);
-}
-.qs:nth-child(even) {
-  border-inline-start-color: var(--me, var(--green));
-}
-.qs-kind {
-  color: var(--fg2);
-  font-size: var(--text-sm);
-  margin-block-end: 6px;
 }
 .qs h2 {
   font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.125rem);
@@ -89,6 +80,14 @@
 .qs-opp .row {
   padding: 0;
   background: transparent;
+  grid-template-columns: 84px minmax(0, 1fr);
+}
+.qs-opp .row .acts {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+}
+.qs-opp h2 {
+  margin-block-end: 16px;
 }
 .qs .opts {
   margin-block-start: 6px;

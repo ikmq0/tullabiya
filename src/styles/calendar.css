@@ -174,5 +174,4 @@
   color: var(--fg);
   font-size: var(--text-md);
   max-inline-size: 60ch;
-  border-inline-start: 4px solid var(--yellow);
 }

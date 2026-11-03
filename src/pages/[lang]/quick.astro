@@ -12,7 +12,7 @@ import { L, monthName, t, tp, weekdayName } from '~/i18n';
 import { DEMO_TODAY } from '~/lib/clock';
 import { mailto } from '~/lib/entities';
 import { toIcsEvent } from '~/lib/ics';
-import { SECTIONS, type Lang, type SectionId } from '~/lib/model';
+import type { Lang } from '~/lib/model';
 
 export function getStaticPaths() {
   return [{ params: { lang: 'ar' } }, { params: { lang: 'en' } }];
@@ -39,7 +39,6 @@ const opp = events
   .sort((a, b) => a.e.start.localeCompare(b.e.start))[0];
 const oppUnit = opp ? unitById(opp.e.unitId) : null;
 const href = (s: { issue: number; slug: string }) => `/${lang}/issue/${s.issue}/${s.slug}/`;
-const sectionName = (id: SectionId) => L(SECTIONS.find((s) => s.id === id)!.name, lang);
 /** Minutes a slab takes; six slabs make the five minutes. */
 const MIN = 0.8;
 const title = t(lang, 'quick.title');
@@ -55,7 +54,6 @@ const title = t(lang, 'quick.title');
 
     <div class="quick-list" data-quick-list>
       <article class="qs" data-section="news" data-min={MIN}>
-        <p class="qs-kind">{sectionName('news')}</p>
         <h2><a href={href(lead)}>{L(lead.title, lang)}</a></h2>
         <p>{L(lead.summary, lang)}</p>
         <div class="act-row">
@@ -65,7 +63,6 @@ const title = t(lang, 'quick.title');
       </article>
 
       <article class="qs" data-section="last" data-min={MIN}>
-        <p class="qs-kind">{t(lang, 'nav.pulse')}</p>
         <h2>{L(funPoll.question, lang)}</h2>
         <PulsePoll
           client:load
@@ -77,7 +74,6 @@ const title = t(lang, 'quick.title');
       </article>
 
       <article class="qs qs-hunt" data-section="last" data-min={MIN}>
-        <p class="qs-kind">{t(lang, 'hunt.title', { month })}</p>
         <h2 class="riddle">{L(hunt.riddle, lang)}</h2>
         <div class="act-row">
           <a class="btn sm" href={`/${lang}/#hunt`}>{t(lang, 'quick.solve')}</a>
@@ -86,8 +82,7 @@ const title = t(lang, 'quick.title');
       </article>
 
       <article class="qs" data-section="guest" data-min={MIN}>
-        <p class="qs-kind">{sectionName('guest')}</p>
-        <h2>{guest ? guest.name[lang] ?? guest.name.ar : ''}</h2>
+        <h2>{t(lang, 'guest.title', { name: guest ? guest.name[lang] ?? guest.name.ar : '' })}</h2>
         {guestStory?.quote && <p class="qs-quote">«{L(guestStory.quote, lang)}»</p>}
         <div class="act-row">
           {guestStory && <a class="btn sm" href={href(guestStory)}>{t(lang, 'quick.readFull')}</a>}
@@ -96,7 +91,6 @@ const title = t(lang, 'quick.title');
       </article>
 
       <article class="qs" data-section="experience" data-min={MIN}>
-        <p class="qs-kind">{sectionName('experience')}</p>
         <h2><a href={href(big)}>{L(big.title, lang)}</a></h2>
         <p>{L(big.summary, lang)}</p>
         <div class="act-row">
@@ -107,7 +101,7 @@ const title = t(lang, 'quick.title');
 
       {opp && oppUnit && (
         <article class="qs qs-opp" data-section="contributions" data-min={MIN}>
-          <p class="qs-kind">{t(lang, 'opp.title')}</p>
+          <h2>{t(lang, 'opp.title')}</h2>
           <OpportunityRow
             client:load
             lang={lang}

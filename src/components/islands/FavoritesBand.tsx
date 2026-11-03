@@ -99,9 +99,8 @@ export default function FavoritesBand({ lang, issue, items }: Props) {
             {mine.map((it) => (
               <li key={it.id}>
                 <a href={it.href}>
-                  <span class="fav-kind">{kindLabel(it)}</span>
                   <span class="fav-title">{it.title}</span>
-                  <span class="fav-meta">{it.meta}</span>
+                  <span class="fav-meta">{kindLabel(it)} · {it.meta}</span>
                 </a>
               </li>
             ))}

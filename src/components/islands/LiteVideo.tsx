@@ -14,7 +14,7 @@ interface Props {
  *  player (youtube-nocookie) loads on tap and starts at once. */
 export default function LiteVideo({ lang, id, title, minutes }: Props) {
   const [playing, setPlaying] = useState(false);
-  const label = minutes ? `${t(lang, 'video.play')} · ${tp(lang, 'voices.minutes', minutes)}` : t(lang, 'video.play');
+  const label = minutes ? `${t(lang, 'video.play')} · ${tp(lang, 'video.minutes', minutes)}` : t(lang, 'video.play');
 
   if (playing) {
     return (
@@ -42,7 +42,7 @@ export default function LiteVideo({ lang, id, title, minutes }: Props) {
         loading="lazy"
       />
       <button type="button" class="play fast-label" onClick={() => setPlaying(true)} aria-label={`${t(lang, 'video.play')}: ${title}`}>
-        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor" /></svg>
+        <svg class="play-mark" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor" /></svg>
         {label}
       </button>
     </div>

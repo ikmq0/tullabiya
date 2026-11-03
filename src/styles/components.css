@@ -398,6 +398,11 @@
   background: var(--quiet);
   margin: 6px auto 18px;
 }
+@media (min-width: 768px) {
+  .sheet-grip {
+    display: none;
+  }
+}
 .sheet-form {
   display: grid;
   gap: 14px;
@@ -1751,6 +1756,8 @@
 /* ---------- for you: marks, dimming, the band's list ---------- */
 .fy-mark {
   display: none;
+  align-self: flex-start;
+  inline-size: fit-content;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--text-sm);
@@ -1807,7 +1814,6 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
   padding: 12px 16px;
   background: var(--bg);
   text-decoration: none;
-  border-inline-start: 6px solid var(--me, var(--turq));
   transition: transform var(--t-press) var(--ease-out), background-color 150ms ease;
 }
 .fav-list a:active {
@@ -1870,6 +1876,14 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
 .video .play:active {
   transform: scale(0.97);
 }
+.video .play .play-mark {
+  flex: none;
+  inline-size: 26px;
+  block-size: 26px;
+}
+[dir='rtl'] .video .play .play-mark {
+  transform: scaleX(-1);
+}
 .video.is-playing {
   clip-path: none;
 }
@@ -1893,6 +1907,8 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
   transform: translateY(-50%);
   z-index: 30;
   display: flex;
+  /* reversed so the notches hug the edge and the label opens inward, in both directions */
+  flex-direction: row-reverse;
   align-items: center;
   gap: 10px;
   pointer-events: none;
@@ -2004,7 +2020,6 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
   color: var(--beige);
   font-size: var(--text-md);
   max-inline-size: 44ch;
-  border-inline-start: 4px solid var(--yellow);
 }
 .hunt-next {
   margin-block: 4px 18px;
@@ -2029,7 +2044,6 @@ html[data-foryou] [data-fy-hide] [data-fy='0'] {
   color: var(--fg2);
 }
 .stamp[data-on='true'] {
-  background: var(--bg);
   color: var(--fg);
 }
 .stamp .stamp-mark {
